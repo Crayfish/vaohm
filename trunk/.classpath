@@ -2,7 +2,7 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="C:/Users/Márk/Dropbox/VAoHM/lib/JMF-2.1.1e/lib/jmf.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Márk/Dropbox/VAoHM/lib/JMF-2.1.1e/lib/jffmpeg-1-1.1.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Márk/workspace/VAoHM/lib/JMF-2.1.1e/lib/jmf.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Márk/workspace/VAoHM/lib/JMF-2.1.1e/lib/jffmpeg-1-1.1.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
