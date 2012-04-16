@@ -22,10 +22,10 @@ public class GUI extends JFrame implements ActionListener {
 	public GUI() {
 		super("Motion Tracking");
 
-		this.setPreferredSize(new Dimension(800, 500));
-		setLocation(
-				(Toolkit.getDefaultToolkit().getScreenSize().width - getWidth()) / 2,
-				(Toolkit.getDefaultToolkit().getScreenSize().height - getHeight()) / 2);
+		this.setPreferredSize(new Dimension(800, 700));
+		this.setLocation(
+				(Toolkit.getDefaultToolkit().getScreenSize().width - 800) / 2,
+				(Toolkit.getDefaultToolkit().getScreenSize().height - 700) / 2);
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 

@@ -43,7 +43,7 @@ public class Videoplayer extends JPanel implements ActionListener {
 
 	public boolean open(MediaLocator ml) {
 
-		new Timer(800, this).start();
+		new Timer(1000, this).start();
 		try {
 			ds = Manager.createDataSource(ml);
 			p = Manager.createRealizedPlayer(ds);
