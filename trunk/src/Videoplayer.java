@@ -1,31 +1,49 @@
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
+import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Date;
 
+import javax.media.Buffer;
 import javax.media.CannotRealizeException;
 import javax.media.Manager;
 import javax.media.MediaLocator;
 import javax.media.NoDataSourceException;
 import javax.media.NoPlayerException;
 import javax.media.Player;
+import javax.media.control.FrameGrabbingControl;
+import javax.media.format.VideoFormat;
 import javax.media.protocol.DataSource;
+import javax.media.util.BufferToImage;
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
+import javax.swing.Timer;
 
-public class Videoplayer extends JPanel {
+public class Videoplayer extends JPanel implements ActionListener {
 
 	private DataSource ds;
 	private Player p = null;
+	private FrameGrabbingControl frameGrabber;
+	private BufferedImage buffImg = null;
+	private ImgPanel ip = null;
 
-	public Videoplayer() {
+	public Videoplayer(ImgPanel imagePanel) {
+		ip = imagePanel;
 	}
 
 	public boolean open(MediaLocator ml) {
 
+		new Timer(800, this).start();
 		try {
 			ds = Manager.createDataSource(ml);
 			p = Manager.createRealizedPlayer(ds);
@@ -52,20 +70,51 @@ public class Videoplayer extends JPanel {
 			add("South", cc);
 		}
 
-		// Start the processor.
-		p.start();// by thomas
-		repaint();
+		p.start();
+
 		setVisible(true);
+
+		frameGrabber = (FrameGrabbingControl) p
+				.getControl("javax.media.control.FrameGrabbingControl");
 
 		return true;
 	}
 
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
+		if (buffImg != null) {
+			g.drawImage(buffImg, 0, 0, this);
+			ip.setImg(buffImg);
+		}
+	}
+
+	private void grab() {
+
+		try {
+			Buffer buf = frameGrabber.grabFrame();
+
+			// Convert frame to an buffered image so it can be processed and
+			// saved
+			Image img = (new BufferToImage((VideoFormat) buf.getFormat())
+					.createImage(buf));
+			buffImg = new BufferedImage(img.getWidth(this),
+					img.getHeight(this), BufferedImage.TYPE_INT_RGB);
+			Graphics2D g = buffImg.createGraphics();
+			g.drawImage(img, null, null);
+			g.setColor(Color.red);
+			g.setFont(new Font("Tahoma", Font.PLAIN, 12)
+					.deriveFont(AffineTransform.getRotateInstance(1.57)));
+			g.drawString((new Date()).toString(), 5, 5);
+		} catch (Exception ex) {
+			System.err.println("FrameGrabbing failed..");
+		}
+
 	}
 
 	public void actionPerformed(ActionEvent e) {
-
+		grab();
+		repaint();
+		ip.repaint();
 	}
 
 	@SuppressWarnings("unused")
