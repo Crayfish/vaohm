@@ -1,5 +1,5 @@
-import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -32,7 +32,7 @@ public class GUI extends JFrame implements ActionListener {
 		init();
 
 		vplayer = new Videoplayer(imagePanel);
-		getContentPane().setLayout(new BorderLayout());
+		getContentPane().setLayout(new FlowLayout());
 		vpanel.setPreferredSize(new Dimension(384, 315));
 		getContentPane().add("North", vpanel);
 		vpanel.add(vplayer);
