@@ -1,3 +1,5 @@
+import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -13,13 +15,14 @@ public class GUI extends JFrame implements ActionListener {
 	private JMenuBar menuBar = new JMenuBar();
 	private JMenu mnFile = new JMenu("File");
 	private JMenuItem mntmOpenFromFile = new JMenuItem("Open from file...");
-	private Videoplayer vplayer = new Videoplayer();
+	private Videoplayer vplayer;
 	private JPanel vpanel = new JPanel();
+	private ImgPanel imagePanel = new ImgPanel();
 
 	public GUI() {
 		super("Motion Tracking");
 
-		setSize(400, 300);
+		this.setPreferredSize(new Dimension(800, 500));
 		setLocation(
 				(Toolkit.getDefaultToolkit().getScreenSize().width - getWidth()) / 2,
 				(Toolkit.getDefaultToolkit().getScreenSize().height - getHeight()) / 2);
@@ -28,9 +31,14 @@ public class GUI extends JFrame implements ActionListener {
 
 		init();
 
-		vpanel.setSize(400, 300);
-		getContentPane().add(vpanel);
+		vplayer = new Videoplayer(imagePanel);
+		getContentPane().setLayout(new BorderLayout());
+		vpanel.setPreferredSize(new Dimension(384, 315));
+		getContentPane().add("North", vpanel);
 		vpanel.add(vplayer);
+
+		imagePanel.setPreferredSize(new Dimension(384, 288));
+		getContentPane().add("North", imagePanel);
 		setVisible(true);
 		pack();
 
