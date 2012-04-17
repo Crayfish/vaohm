@@ -5,12 +5,16 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JSlider;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
-public class GUI extends JFrame implements ActionListener {
+public class GUI extends JFrame implements ActionListener,ChangeListener {
 	private static final long serialVersionUID = 1L;
 	private JMenuBar menuBar = new JMenuBar();
 	private JMenu mnFile = new JMenu("File");
@@ -18,6 +22,9 @@ public class GUI extends JFrame implements ActionListener {
 	private Videoplayer vplayer;
 	private JPanel vpanel = new JPanel();
 	private ImgPanel imagePanel = new ImgPanel();
+	private JPanel settingsPanel = new JPanel();
+	private JSlider thresholdSldr = new JSlider(JSlider.HORIZONTAL,0,255,200);
+	private JLabel thresholdValue = new JLabel();
 
 	public GUI() {
 		super("Motion Tracking");
@@ -39,6 +46,11 @@ public class GUI extends JFrame implements ActionListener {
 
 		imagePanel.setPreferredSize(new Dimension(384, 288));
 		getContentPane().add("North", imagePanel);
+		
+		getContentPane().add("North", settingsPanel);
+		settingsPanel.add(thresholdSldr);
+		settingsPanel.add(thresholdValue);
+		
 		setVisible(true);
 		pack();
 
@@ -52,9 +64,13 @@ public class GUI extends JFrame implements ActionListener {
 		mntmOpenFromFile.addActionListener(this);
 		mntmOpenFromFile.setActionCommand("open");
 
+		thresholdSldr.addChangeListener(this);
+		
+		
+		
+		
 	}
 
-	@Override
 	public void actionPerformed(ActionEvent e) {
 		if (e.getActionCommand().equals("open")) {
 
@@ -63,6 +79,12 @@ public class GUI extends JFrame implements ActionListener {
 
 		}
 
+	}
+
+	public void stateChanged(ChangeEvent arg0) {
+		int value = thresholdSldr.getValue();
+		thresholdValue.setText(value+"");
+		vplayer.setThreshold(value);
 	}
 
 }
