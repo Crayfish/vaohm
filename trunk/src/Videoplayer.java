@@ -9,6 +9,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.awt.image.BufferedImageOp;
+import java.awt.image.LookupOp;
+import java.awt.image.ShortLookupTable;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -29,6 +32,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
+
 public class Videoplayer extends JPanel implements ActionListener {
 
 	private DataSource ds;
@@ -36,24 +40,31 @@ public class Videoplayer extends JPanel implements ActionListener {
 	private FrameGrabbingControl frameGrabber;
 	private BufferedImage buffImg = null;
 	private ImgPanel ip = null;
+	private short[] threshold = new short[256];
+	
 
 	public Videoplayer(ImgPanel imagePanel) {
 		ip = imagePanel;
+		for (int i = 0; i < 256; i++)
+			threshold[i] = (i < 200) ? (short)0 : (short)255;
 	}
 
 	public boolean open(MediaLocator ml) {
 
-		new Timer(1000, this).start();
+		new Timer(500, this).start();
 		try {
 			ds = Manager.createDataSource(ml);
 			p = Manager.createRealizedPlayer(ds);
-		} catch (NoDataSourceException | IOException e) {
+		} catch (NoDataSourceException  e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (NoPlayerException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (CannotRealizeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -97,14 +108,17 @@ public class Videoplayer extends JPanel implements ActionListener {
 			// saved
 			Image img = (new BufferToImage((VideoFormat) buf.getFormat())
 					.createImage(buf));
-			buffImg = new BufferedImage(img.getWidth(this),
+			BufferedImage buffImg1 = new BufferedImage(img.getWidth(this),
 					img.getHeight(this), BufferedImage.TYPE_INT_RGB);
-			Graphics2D g = buffImg.createGraphics();
+			Graphics2D g = buffImg1.createGraphics();
 			g.drawImage(img, null, null);
-			g.setColor(Color.red);
-			g.setFont(new Font("Tahoma", Font.PLAIN, 12)
-					.deriveFont(AffineTransform.getRotateInstance(1.57)));
-			g.drawString((new Date()).toString(), 5, 5);
+		
+			
+			
+			BufferedImageOp thresholdOp =new LookupOp(new ShortLookupTable(0, threshold), null);
+			buffImg = thresholdOp.filter(buffImg1, null);
+			
+			
 		} catch (Exception ex) {
 			System.err.println("FrameGrabbing failed..");
 		}
@@ -145,6 +159,12 @@ public class Videoplayer extends JPanel implements ActionListener {
 			return false;
 		}
 		return true;
+	}
+	
+	public void setThreshold(int value){
+		
+		for (int i = 0; i < 256; i++)
+			threshold[i] = (i < value) ? (short)0 : (short)255;
 	}
 
 }
