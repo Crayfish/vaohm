@@ -25,6 +25,7 @@ public class GUI extends JFrame implements ActionListener,ChangeListener {
 	private JPanel settingsPanel = new JPanel();
 	private JSlider thresholdSldr = new JSlider(JSlider.HORIZONTAL,0,255,200);
 	private JLabel thresholdValue = new JLabel();
+	private JLabel threshold = new JLabel("Threshold: ");
 
 	public GUI() {
 		super("Motion Tracking");
@@ -48,6 +49,7 @@ public class GUI extends JFrame implements ActionListener,ChangeListener {
 		getContentPane().add("North", imagePanel);
 		
 		getContentPane().add("North", settingsPanel);
+		settingsPanel.add(threshold);
 		settingsPanel.add(thresholdSldr);
 		settingsPanel.add(thresholdValue);
 		

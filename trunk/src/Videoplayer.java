@@ -1,3 +1,4 @@
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -5,13 +6,16 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.color.ColorSpace;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
+import java.awt.image.ColorConvertOp;
 import java.awt.image.LookupOp;
 import java.awt.image.ShortLookupTable;
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -32,6 +36,10 @@ import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
+import com.googlecode.javacv.cpp.opencv_core.IplImage;
+import static com.googlecode.javacv.cpp.opencv_core.*;
+import static com.googlecode.javacv.cpp.opencv_highgui.*;
+import static com.googlecode.javacv.cpp.opencv_imgproc.*;
 
 public class Videoplayer extends JPanel implements ActionListener {
 
@@ -41,7 +49,7 @@ public class Videoplayer extends JPanel implements ActionListener {
 	private BufferedImage buffImg = null;
 	private ImgPanel ip = null;
 	private short[] threshold = new short[256];
-	
+	private IplImage image;
 
 	public Videoplayer(ImgPanel imagePanel) {
 		ip = imagePanel;
@@ -51,7 +59,7 @@ public class Videoplayer extends JPanel implements ActionListener {
 
 	public boolean open(MediaLocator ml) {
 
-		new Timer(500, this).start();
+		new Timer(400, this).start();
 		try {
 			ds = Manager.createDataSource(ml);
 			p = Manager.createRealizedPlayer(ds);
@@ -68,7 +76,8 @@ public class Videoplayer extends JPanel implements ActionListener {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
+		
+		
 		setLayout(new BorderLayout());
 
 		Component cc;
@@ -94,7 +103,7 @@ public class Videoplayer extends JPanel implements ActionListener {
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
 		if (buffImg != null) {
-			g.drawImage(buffImg, 0, 0, this);
+//			g.drawImage(buffImg, 0, 0, this);
 			ip.setImg(buffImg);
 		}
 	}
@@ -106,21 +115,26 @@ public class Videoplayer extends JPanel implements ActionListener {
 
 			// Convert frame to an buffered image so it can be processed and
 			// saved
-			Image img = (new BufferToImage((VideoFormat) buf.getFormat())
-					.createImage(buf));
-			BufferedImage buffImg1 = new BufferedImage(img.getWidth(this),
-					img.getHeight(this), BufferedImage.TYPE_INT_RGB);
+			Image img = (new BufferToImage((VideoFormat) buf.getFormat()).createImage(buf));
+			BufferedImage buffImg1 = new BufferedImage(img.getWidth(this),img.getHeight(this), BufferedImage.TYPE_INT_RGB);
 			Graphics2D g = buffImg1.createGraphics();
-			g.drawImage(img, null, null);
-		
-			
-			
+			g.drawImage(img, 0,0, null);
+			g.dispose();
+//			BufferedImageOp grayscale = new ColorConvertOp(ColorSpace.getInstance(ColorSpace.CS_GRAY), null);
+//			buffImg1 = grayscale.filter(buffImg1, null);
 			BufferedImageOp thresholdOp =new LookupOp(new ShortLookupTable(0, threshold), null);
 			buffImg = thresholdOp.filter(buffImg1, null);
 			
+//			image = IplImage.createFrom(buffImg1);
+//			IplImage imgThreshold = cvCreateImage(cvGetSize(image), 8, 1);
+//	        cvInRangeS(image, cvScalar(100, 100, 100, 0), cvScalar(180, 255, 255, 0), imgThreshold);
+//	        cvReleaseImage(image);
+//	        cvSmooth(imgThreshold, imgThreshold, CV_MEDIAN, 13);
+//	        buffImg = imgThreshold.getBufferedImage();
 			
 		} catch (Exception ex) {
 			System.err.println("FrameGrabbing failed..");
+			ex.printStackTrace();
 		}
 
 	}
