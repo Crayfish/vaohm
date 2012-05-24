@@ -59,7 +59,7 @@ public class Videoplayer extends JPanel implements ActionListener {
 
 	public boolean open(MediaLocator ml) {
 
-		new Timer(400, this).start();
+		
 		try {
 			ds = Manager.createDataSource(ml);
 			p = Manager.createRealizedPlayer(ds);
@@ -94,6 +94,7 @@ public class Videoplayer extends JPanel implements ActionListener {
 
 		setVisible(true);
 
+		new Timer(400, this).start();
 		frameGrabber = (FrameGrabbingControl) p
 				.getControl("javax.media.control.FrameGrabbingControl");
 
