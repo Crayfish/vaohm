@@ -33,8 +33,7 @@ public class main {
 
 		File f = new File("lib/squash1.avi");
 		OpenCVFrameGrabber grabber = new OpenCVFrameGrabber(f);
-		grabber.setFrameRate(25);
-		System.out.println(grabber.getFrameRate());
+
 		grabber.start();
 
 		IplImage frame = grabber.grab();
@@ -51,6 +50,7 @@ public class main {
 		CvMemStorage storage = CvMemStorage.create();
 
 		while (canvasFrame.isVisible() && (frame = grabber.grab()) != null) {
+
 			originalFrame.showImage(frame);
 			cvSmooth(frame, frame, CV_GAUSSIAN, 9, 9, 2, 2);
 			if (image == null) {
@@ -64,8 +64,9 @@ public class main {
 				image = IplImage.create(frame.width(), frame.height(),
 						IPL_DEPTH_8U, 1);
 				cvCvtColor(frame, image, CV_RGB2GRAY);
+				cvThreshold(image, image, 120, 255, CV_THRESH_BINARY);
 			}
-			canvasFrame.showImage(frame);
+			// canvasFrame.showImage(frame);
 
 			if (diff == null) {
 				diff = IplImage.create(frame.width(), frame.height(),
@@ -76,7 +77,7 @@ public class main {
 				// perform ABS difference
 				cvAbsDiff(image, prevImage, diff);
 				// do some threshold for wipe away useless details
-				cvThreshold(diff, diff, 64, 255, CV_THRESH_BINARY);
+				cvThreshold(diff, diff, 50, 255, CV_THRESH_BINARY);
 
 				canvasFrame.showImage(diff);
 
@@ -117,6 +118,7 @@ public class main {
 					contour = contour.h_next();
 				}
 			}
+			prevImage = image;
 		}
 		grabber.stop();
 		canvasFrame.dispose();
