@@ -17,9 +17,13 @@ import static com.googlecode.javacv.cpp.opencv_imgproc.cvThreshold;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 
 import javax.swing.JFrame;
+import javax.swing.Timer;
 
 import com.googlecode.javacpp.Loader;
 import com.googlecode.javacv.OpenCVFrameGrabber;
@@ -31,12 +35,13 @@ import com.googlecode.javacv.cpp.opencv_core.CvSeq;
 import com.googlecode.javacv.cpp.opencv_core.CvSize2D32f;
 import com.googlecode.javacv.cpp.opencv_core.IplImage;
 
-public class GUI extends JFrame {
+public class GUI extends JFrame implements ActionListener {
 
 	private ImgPanel pnlOrig = new ImgPanel();
 	private ImgPanel pnlMod = new ImgPanel();
 
 	public GUI() {
+
 		try {
 			init();
 		} catch (Exception e) {
@@ -60,6 +65,8 @@ public class GUI extends JFrame {
 
 		getContentPane().add(pnlMod, c);
 
+		new Timer(400, this).start();
+
 		File f = new File("lib/squash1.avi");
 		OpenCVFrameGrabber grabber = new OpenCVFrameGrabber(f);
 
@@ -82,6 +89,12 @@ public class GUI extends JFrame {
 		CvMemStorage storage = CvMemStorage.create();
 
 		setPreferredSize(new Dimension(frame.width() * 2, frame.height() * 2));
+		this.setLocation(
+				(Toolkit.getDefaultToolkit().getScreenSize().width - 800) / 2,
+				(Toolkit.getDefaultToolkit().getScreenSize().height - 700) / 2);
+
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setResizable(false);
 		setVisible(true);
 		pack();
 
@@ -171,6 +184,12 @@ public class GUI extends JFrame {
 		}
 		grabber.stop();
 		// canvasFrame.dispose();
+
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent arg0) {
+		// TODO Auto-generated method stub
 
 	}
 }
