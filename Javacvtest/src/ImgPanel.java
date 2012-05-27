@@ -23,7 +23,7 @@ public class ImgPanel extends JPanel {
 
 	public void paint(Graphics g) {
 		g.setColor(Color.white);
-		g.fillRect(0, 0, 300, 300);
+		g.fillRect(0, 0, 400, 300);
 		if (buffImg != null) {
 			g.drawImage(buffImg, 0, 0, this);
 		}

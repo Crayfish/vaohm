@@ -1,8 +1,11 @@
+import static com.googlecode.javacv.cpp.opencv_core.CV_FONT_HERSHEY_PLAIN;
 import static com.googlecode.javacv.cpp.opencv_core.CV_RGB;
 import static com.googlecode.javacv.cpp.opencv_core.IPL_DEPTH_8U;
 import static com.googlecode.javacv.cpp.opencv_core.cvPoint;
+import static com.googlecode.javacv.cpp.opencv_core.cvPutText;
 import static com.googlecode.javacv.cpp.opencv_core.cvRectangle;
 import static com.googlecode.javacv.cpp.opencv_imgproc.CV_CHAIN_APPROX_SIMPLE;
+import static com.googlecode.javacv.cpp.opencv_imgproc.CV_GAUSSIAN;
 import static com.googlecode.javacv.cpp.opencv_imgproc.CV_MEDIAN;
 import static com.googlecode.javacv.cpp.opencv_imgproc.CV_RETR_LIST;
 import static com.googlecode.javacv.cpp.opencv_imgproc.CV_RGB2GRAY;
@@ -19,8 +22,10 @@ import java.awt.image.BufferedImage;
 
 import com.googlecode.javacpp.Loader;
 import com.googlecode.javacv.cpp.opencv_core.CvContour;
+import com.googlecode.javacv.cpp.opencv_core.CvFont;
 import com.googlecode.javacv.cpp.opencv_core.CvMemStorage;
 import com.googlecode.javacv.cpp.opencv_core.CvRect;
+import com.googlecode.javacv.cpp.opencv_core.CvScalar;
 import com.googlecode.javacv.cpp.opencv_core.CvSeq;
 import com.googlecode.javacv.cpp.opencv_core.IplImage;
 import com.googlecode.javacv.cpp.opencv_video.BackgroundSubtractorMOG2;
@@ -62,9 +67,10 @@ public class ImageProcessor {
 		// imageCanvas.showImage(frame);
 		// canvas.showImage(foreground);
 
+		// original frame,am ende rechtecke draufzeichnen
 		IplImage orig = frame.clone();
 
-		// cvSmooth(frame, frame, CV_GAUSSIAN, 9, 9, 2, 2);
+		cvSmooth(frame, frame, CV_GAUSSIAN, 9, 9, 2, 2);
 		if (image == null) {
 			image = IplImage.create(frame.width(), frame.height(),
 					IPL_DEPTH_8U, 1);
@@ -84,6 +90,8 @@ public class ImageProcessor {
 			// morph. schliessen
 			cvDilate(image, image, null, 3);
 			cvErode(image, image, null, 3);
+
+			// cvCanny(image, image, 80, 120, 3);
 
 		}
 		// canvasFrame.showImage(frame);
@@ -121,45 +129,19 @@ public class ImageProcessor {
 								+ boundbox.height()), CV_RGB(255, 0, 0), 1, 8,
 						0);
 
+				CvFont font = new CvFont(CV_FONT_HERSHEY_PLAIN, 1, 1);
+				cvPutText(orig, " " + cnt, cvPoint(boundbox.x(), boundbox.y()),
+						font, CvScalar.RED);
+
 				// Color randomColor = new Color(rand.nextFloat(),
 				// rand.nextFloat(), rand.nextFloat());
 				// CvScalar color = CV_RGB(randomColor.getRed(),
 				// randomColor.getGreen(), randomColor.getBlue());
 				// cvDrawContours(diff, ptr, color, CV_RGB(0, 0, 0), -1,
 				// CV_FILLED, 8, cvPoint(0, 0));
-				System.out.println(cnt++);
+
 			}
 
-			// while (contour != null && !contour.isNull()) {
-			// // System.out.println(contour.elem_size());
-			// if (contour.elem_size() > 0) {
-			// CvBox2D box = cvMinAreaRect2(contour, storage);
-			// // test intersection
-			// if (box != null) {
-			// CvPoint2D32f center = box.center();
-			// CvSize2D32f size = box.size();
-			// // System.out.println(center.x() + " " +
-			// // center.y());
-			//
-			// /*
-			// * for (int i = 0; i < sa.length; i++) { if
-			// * ((Math.abs(center.x - (sa[i].offsetX + sa[i].width /
-			// * 2))) < ((size.width / 2) + (sa[i].width / 2)) &&
-			// * (Math.abs(center.y - (sa[i].offsetY + sa[i].height /
-			// * 2))) < ((size.height / 2) + (sa[i].height / 2))) {
-			// *
-			// * if (!alarmedZones.containsKey(i)) {
-			// * alarmedZones.put(i, true); activeAlarms.put(i, 1); }
-			// * else { activeAlarms.remove(i); activeAlarms.put(i,
-			// * 1); }
-			// * System.out.println("Motion Detected in the area no: "
-			// * + i + " Located at points: (" + sa[i].x + ", " +
-			// * sa[i].y+ ") -" + " (" + (sa[i].x +sa[i].width) + ", "
-			// * + (sa[i].y+sa[i].height) + ")"); } }
-			// */
-			// }
-			// }
-			// contour = contour.h_next();
 		}
 		return orig.getBufferedImage();
 	}
