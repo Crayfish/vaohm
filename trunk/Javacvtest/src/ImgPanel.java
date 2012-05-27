@@ -1,4 +1,3 @@
-
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
@@ -8,7 +7,6 @@ import javax.swing.JPanel;
 public class ImgPanel extends JPanel {
 
 	private BufferedImage buffImg = null;
-	
 
 	public ImgPanel() {
 		super();
@@ -25,7 +23,7 @@ public class ImgPanel extends JPanel {
 
 	public void paint(Graphics g) {
 		g.setColor(Color.white);
-		g.fillRect(0, 0, 200, 200);
+		g.fillRect(0, 0, 300, 300);
 		if (buffImg != null) {
 			g.drawImage(buffImg, 0, 0, this);
 		}

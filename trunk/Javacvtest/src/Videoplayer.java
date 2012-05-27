@@ -34,15 +34,12 @@ public class Videoplayer extends JPanel implements ActionListener {
 	private FrameGrabbingControl frameGrabber;
 	private BufferedImage buffImg = null;
 	private ImgPanel ip = null;
-	private short[] threshold = new short[256];
-	private IplImage image;
 	private ImageProcessor imgProcessor = new ImageProcessor();
 	private BufferedImage procImage = null;
 
 	public Videoplayer(ImgPanel imagePanel) {
 		ip = imagePanel;
-		for (int i = 0; i < 256; i++)
-			threshold[i] = (i < 200) ? (short) 0 : (short) 255;
+
 	}
 
 	public boolean open(MediaLocator ml) {
@@ -80,7 +77,7 @@ public class Videoplayer extends JPanel implements ActionListener {
 
 		setVisible(true);
 
-		new Timer(400, this).start();
+		new Timer(100, this).start();
 		frameGrabber = (FrameGrabbingControl) p
 				.getControl("javax.media.control.FrameGrabbingControl");
 
@@ -148,21 +145,23 @@ public class Videoplayer extends JPanel implements ActionListener {
 	}
 
 	@SuppressWarnings("unused")
-	public boolean openURL() {
-		URL url = null;
+	public boolean openURL(URL url) {
+		if (url == null) {
+			JFileChooser fc = new JFileChooser();
+			int ret = fc.showDialog(null, "Open file");
 
-		JFileChooser fc = new JFileChooser();
-		int ret = fc.showDialog(null, "Open file");
+			if (ret == JFileChooser.APPROVE_OPTION) {
+				try {
+					url = fc.getSelectedFile().toURL();
+				} catch (MalformedURLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 
-		if (ret == JFileChooser.APPROVE_OPTION) {
-			try {
-				url = fc.getSelectedFile().toURL();
-			} catch (MalformedURLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
-
 		}
+
+		System.out.println(url);
 
 		MediaLocator mediaLocator;
 
@@ -180,8 +179,7 @@ public class Videoplayer extends JPanel implements ActionListener {
 	public void setThreshold(int value) {
 
 		imgProcessor.setThreshold(value);
-		// for (int i = 0; i < 256; i++)
-		// threshold[i] = (i < value) ? (short) 0 : (short) 255;
+
 	}
 
 }
