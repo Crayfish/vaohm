@@ -34,7 +34,7 @@ public class GUI1 extends JFrame implements ActionListener, ChangeListener {
 	public GUI1() {
 		super("Motion Tracking");
 
-		this.setPreferredSize(new Dimension(800, 700));
+		this.setPreferredSize(new Dimension(800, 500));
 		this.setLocation(
 				(Toolkit.getDefaultToolkit().getScreenSize().width - 800) / 2,
 				(Toolkit.getDefaultToolkit().getScreenSize().height - 700) / 2);
