@@ -10,5 +10,7 @@
 	<classpathentry kind="lib" path="lib/javacv-bin/javacv-windows-x86_64.jar"/>
 	<classpathentry kind="lib" path="lib/javacv-bin/javacv-windows-x86.jar"/>
 	<classpathentry kind="lib" path="lib/javacv-bin/javacv.jar"/>
+	<classpathentry kind="lib" path="lib/JMF-2.1.1e/lib/jffmpeg-1-1.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/JMF-2.1.1e/lib/jmf.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
