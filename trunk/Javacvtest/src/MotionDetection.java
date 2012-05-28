@@ -4,7 +4,9 @@ import static com.googlecode.javacv.cpp.opencv_core.IPL_DEPTH_8U;
 import static com.googlecode.javacv.cpp.opencv_core.cvPoint;
 import static com.googlecode.javacv.cpp.opencv_core.cvPutText;
 import static com.googlecode.javacv.cpp.opencv_core.cvRectangle;
+import static com.googlecode.javacv.cpp.opencv_core.cvSetImageROI;
 import static com.googlecode.javacv.cpp.opencv_imgproc.CV_CHAIN_APPROX_SIMPLE;
+import static com.googlecode.javacv.cpp.opencv_imgproc.CV_GAUSSIAN;
 import static com.googlecode.javacv.cpp.opencv_imgproc.CV_MEDIAN;
 import static com.googlecode.javacv.cpp.opencv_imgproc.CV_RETR_LIST;
 import static com.googlecode.javacv.cpp.opencv_imgproc.cvBoundingRect;
@@ -41,6 +43,7 @@ public class MotionDetection {
 		CvMemStorage storage = CvMemStorage.create();
 		CanvasFrame frameInput = new CanvasFrame("Original");
 		CanvasFrame frameOutput = new CanvasFrame("Foregroung");
+		CanvasFrame frametest = new CanvasFrame("test");
 		File f = new File("lib/squash1.avi");
 		FrameGrabber grabber = new OpenCVFrameGrabber(f);
 		grabber.start();
@@ -53,10 +56,27 @@ public class MotionDetection {
 				true);
 		IplImage frame = grabbedImage.clone();
 
+		CvFont font = new CvFont(CV_FONT_HERSHEY_PLAIN, 1, 1);
+		CvRect rect = new CvRect(0, 0, frame.width() - 3, frame.height() - 3);
+		IplImage mask = IplImage.create(frame.width(), frame.height() - 10,
+				IPL_DEPTH_8U, 1);
+
+		cvSetImageROI(frame, rect);
+		// cvCopy(frame, frame);
+
+		cvRectangle(frame, cvPoint(rect.x(), rect.y()),
+				cvPoint(rect.x() + rect.width(), rect.y() + rect.height()),
+				CV_RGB(255, 0, 0), 1, 8, 0);
+
+		frametest.showImage(frame);
+
+		System.out.println("width:" + frame.width() + " height:"
+				+ (frame.height() - 10));
+
 		while (frameInput.isVisible()
 				&& (grabbedImage = grabber.grab()) != null) {
 
-			// cvSmooth(grabbedImage, grabbedImage, CV_GAUSSIAN, 9, 9, 2, 2);
+			// cvSetImageROI(grabbedImage, rect);
 
 			if (foreground == null) {
 				foreground = IplImage.create(frame.width(), frame.height(),
@@ -66,16 +86,16 @@ public class MotionDetection {
 			mog.apply(grabbedImage, foreground, -1);
 
 			// morph. schliessen
-			cvDilate(foreground, foreground, null, 5);
+			cvDilate(foreground, foreground, null, 4);
 			cvErode(foreground, foreground, null, 5);
 
-			cvSmooth(foreground, foreground, CV_MEDIAN, 3, 3, 2, 2);
+			cvSmooth(foreground, foreground, CV_MEDIAN, 9, 9, 2, 2);
+
+			cvSmooth(foreground, foreground, CV_GAUSSIAN, 9, 9, 2, 2);
 
 			cvFindContours(foreground, storage, contour,
 					Loader.sizeof(CvContour.class), CV_RETR_LIST,
 					CV_CHAIN_APPROX_SIMPLE);
-			// cvDilate(diff, diff, null, 3);
-			// cvErode(diff, diff, null, 3);
 
 			CvRect boundbox;
 
@@ -84,23 +104,27 @@ public class MotionDetection {
 
 				boundbox = cvBoundingRect(ptr, 0);
 
-				cvRectangle(
-						grabbedImage,
-						cvPoint(boundbox.x(), boundbox.y()),
-						cvPoint(boundbox.x() + boundbox.width(), boundbox.y()
-								+ boundbox.height()), CV_RGB(255, 0, 0), 1, 8,
-						0);
+				if (boundbox.y() < 278) {
+					cvPutText(grabbedImage, " " + cnt,
+							cvPoint(boundbox.x(), boundbox.y()), font,
+							CvScalar.RED);
 
-				CvFont font = new CvFont(CV_FONT_HERSHEY_PLAIN, 1, 1);
-				cvPutText(grabbedImage, " " + cnt,
-						cvPoint(boundbox.x(), boundbox.y()), font, CvScalar.RED);
+					cvRectangle(
+							grabbedImage,
+							cvPoint(boundbox.x(), boundbox.y()),
+							cvPoint(boundbox.x() + boundbox.width(),
+									boundbox.y() + boundbox.height()),
+							CV_RGB(255, 0, 0), 1, 8, 0);
 
-				// Color randomColor = new Color(rand.nextFloat(),
-				// rand.nextFloat(), rand.nextFloat());
-				// CvScalar color = CV_RGB(randomColor.getRed(),
-				// randomColor.getGreen(), randomColor.getBlue());
-				// cvDrawContours(diff, ptr, color, CV_RGB(0, 0, 0), -1,
-				// CV_FILLED, 8, cvPoint(0, 0));
+					// Color randomColor = new Color(rand.nextFloat(),
+					// rand.nextFloat(), rand.nextFloat());
+					// CvScalar color = CV_RGB(randomColor.getRed(),
+					// randomColor.getGreen(), randomColor.getBlue());
+					// cvDrawContours(diff, ptr, color, CV_RGB(0, 0, 0), -1,
+					// CV_FILLED, 8, cvPoint(0, 0));
+
+					cnt++;
+				}
 
 			}
 
