@@ -3,7 +3,6 @@ import java.awt.FlowLayout;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import javax.swing.JFrame;
@@ -11,18 +10,18 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 public class GUI1 extends JFrame implements ActionListener, ChangeListener {
-	private static final long serialVersionUID = 1L;
+	/* GUI Components */
 	private JMenuBar menuBar = new JMenuBar();
 	private JMenu mnFile = new JMenu("File");
 	private JMenuItem mntmOpenFromFile = new JMenuItem("Open from file...");
 	private JMenuItem mntmSquash1 = new JMenuItem("Squash1.avi");
-	private Videoplayer vplayer;
 	private JPanel vpanel = new JPanel();
 	private ImgPanel imagePanel = new ImgPanel();
 	private JPanel settingsPanel = new JPanel();
@@ -30,6 +29,9 @@ public class GUI1 extends JFrame implements ActionListener, ChangeListener {
 	private JLabel thresholdValue = new JLabel();
 	private JLabel threshold = new JLabel("Threshold: ");
 	private JLabel blobs = new JLabel("Blobs: ");
+
+	private Videoplayer vplayer;
+	private ImageProcessor processor;
 
 	public GUI1() {
 		super("Motion Tracking");
@@ -43,7 +45,32 @@ public class GUI1 extends JFrame implements ActionListener, ChangeListener {
 
 		init();
 
-		vplayer = new Videoplayer(imagePanel);
+		setVisible(true);
+		pack();
+
+	}
+
+	/***
+	 * Initialize GUI Components
+	 */
+	private void init() {
+
+		/* Menu issues */
+		setJMenuBar(menuBar);
+		menuBar.add(mnFile);
+
+		mnFile.add(mntmOpenFromFile);
+		mntmOpenFromFile.addActionListener(this);
+		mntmOpenFromFile.setActionCommand("open");
+
+		mnFile.add(mntmSquash1);
+		mntmSquash1.addActionListener(this);
+		mntmSquash1.setActionCommand("squash1");
+
+		thresholdSldr.addChangeListener(this);
+
+		/* Layout issues */
+		vplayer = new Videoplayer(imagePanel, processor = new ImageProcessor());
 		getContentPane().setLayout(new FlowLayout());
 		vpanel.setPreferredSize(new Dimension(384, 315));
 		getContentPane().add("North", vpanel);
@@ -60,32 +87,23 @@ public class GUI1 extends JFrame implements ActionListener, ChangeListener {
 				.setText(new Integer(thresholdSldr.getValue()).toString());
 		settingsPanel.add(blobs);
 
-		setVisible(true);
-		pack();
-
 	}
 
-	private void init() {
-		setJMenuBar(menuBar);
-		menuBar.add(mnFile);
-
-		mnFile.add(mntmOpenFromFile);
-		mntmOpenFromFile.addActionListener(this);
-		mntmOpenFromFile.setActionCommand("open");
-
-		mnFile.add(mntmSquash1);
-		mntmSquash1.addActionListener(this);
-		mntmSquash1.setActionCommand("squash1");
-
-		thresholdSldr.addChangeListener(this);
-
-	}
-
+	/**
+	 * 
+	 */
 	public void actionPerformed(ActionEvent e) {
 		if (e.getActionCommand().equals("open")) {
 
-			if (vplayer.openURL(null))
-				pack();
+			try {
+				if (vplayer.openURL(null))
+					pack();
+
+			} catch (Exception e1) {
+				JOptionPane.showMessageDialog(this,
+						"Cannot open the video file.");
+				// e1.printStackTrace();
+			}
 
 		}
 		if (e.getActionCommand().equals("squash1")) {
@@ -95,15 +113,20 @@ public class GUI1 extends JFrame implements ActionListener, ChangeListener {
 						.openURL(new URL(
 								"file:/C:/Users/Márk/Documents/UNI/Visual Analisis of Human Motion/squash1.avi")))
 					pack();
-			} catch (MalformedURLException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+
+			} catch (Exception e1) {
+				// e1.printStackTrace();
+				JOptionPane.showMessageDialog(this,
+						"Cannot open the video file.");
 			}
 
 		}
 
 	}
 
+	/**
+	 * 
+	 */
 	public void stateChanged(ChangeEvent arg0) {
 		int value = thresholdSldr.getValue();
 		thresholdValue

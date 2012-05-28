@@ -8,15 +8,11 @@ import static com.googlecode.javacv.cpp.opencv_imgproc.CV_CHAIN_APPROX_SIMPLE;
 import static com.googlecode.javacv.cpp.opencv_imgproc.CV_GAUSSIAN;
 import static com.googlecode.javacv.cpp.opencv_imgproc.CV_MEDIAN;
 import static com.googlecode.javacv.cpp.opencv_imgproc.CV_RETR_LIST;
-import static com.googlecode.javacv.cpp.opencv_imgproc.CV_RGB2GRAY;
-import static com.googlecode.javacv.cpp.opencv_imgproc.CV_THRESH_BINARY;
 import static com.googlecode.javacv.cpp.opencv_imgproc.cvBoundingRect;
-import static com.googlecode.javacv.cpp.opencv_imgproc.cvCvtColor;
 import static com.googlecode.javacv.cpp.opencv_imgproc.cvDilate;
 import static com.googlecode.javacv.cpp.opencv_imgproc.cvErode;
 import static com.googlecode.javacv.cpp.opencv_imgproc.cvFindContours;
 import static com.googlecode.javacv.cpp.opencv_imgproc.cvSmooth;
-import static com.googlecode.javacv.cpp.opencv_imgproc.cvThreshold;
 
 import java.awt.image.BufferedImage;
 
@@ -28,100 +24,117 @@ import com.googlecode.javacv.cpp.opencv_core.CvRect;
 import com.googlecode.javacv.cpp.opencv_core.CvScalar;
 import com.googlecode.javacv.cpp.opencv_core.CvSeq;
 import com.googlecode.javacv.cpp.opencv_core.IplImage;
+import com.googlecode.javacv.cpp.opencv_objdetect;
 import com.googlecode.javacv.cpp.opencv_video.BackgroundSubtractorMOG2;
 
+/**
+ * Class for Image Processing and Motion Detection
+ * 
+ * Processes every frame in order to detect the players on the squash field
+ * 
+ * we are using javaCV, the java wrapper for OpenCV for image manipulation
+ * 
+ * @author Márk Ormos, Thomas Mayr
+ * @since 28.05.2012
+ */
 public class ImageProcessor {
 
-	private IplImage prevImage = null;
-	private IplImage image = null;
-	private IplImage diff = null;
-	private IplImage foreground = null;
-	private CvMemStorage storage = CvMemStorage.create();
+	/** Threshold value */
 	private int thres = 120;
 
+	/** Sequent to store contours (blobs) */
 	CvSeq contour = new CvSeq(null);
+
+	/** sequent used as pointer to contour */
 	CvSeq ptr = new CvSeq();
-	// CanvasFrame imageCanvas = new CanvasFrame("image");
-	// CanvasFrame canvas = new CanvasFrame("foreground");
-	BackgroundSubtractorMOG2 mog = null;
 
+	/** memory to store sequents */
+	CvMemStorage storage;
+
+	/** Font type to write on image */
+	CvFont font = new CvFont(CV_FONT_HERSHEY_PLAIN, 1, 1);
+
+	/** to eliminate the background */
+	BackgroundSubtractorMOG2 mog = new BackgroundSubtractorMOG2(30, 16, true);
+
+	/** image to store the foreground */
+	IplImage foreground = null;
+
+	/**
+	 * Default constructor
+	 * 
+	 */
 	public ImageProcessor() {
-
+		// Preload the opencv_objdetect module to work around a known bug
+		Loader.load(opencv_objdetect.class);
+		storage = CvMemStorage.create();
 	}
 
-	public synchronized BufferedImage process(IplImage frame) {
+	/**
+	 * Processes the current frame of the video in order to detect and identify
+	 * the players
+	 * 
+	 * We use nearly the same approach for blob detection described in the paper
+	 * "A Low-Cost Real-Time Tracker of Live Sport Events"
+	 * 
+	 * 1. eliminate background 2. use filters and morph. operations to reduce
+	 * noise
+	 * 
+	 * 
+	 * @param grabbedImage
+	 *            the current frame grabbed from the video
+	 * @return input image with markers
+	 */
+	public synchronized BufferedImage process(IplImage grabbedImage) {
 
-		// Loader.load(opencv_objdetect.class);
-		// IplImage image = frame.clone();
-		// IplImage foreground = frame.clone();
-		//
-		// mog = new BackgroundSubtractorMOG2();
-		//
-		// mog.apply(image, foreground, 200);
-		//
-		// cvThreshold(foreground, foreground, 120, 255, CV_THRESH_BINARY);
-		// medianBlur(foreground, foreground, 3);
-		// cvErode(foreground, foreground, null, 10);
-		// cvDilate(foreground, foreground, null, 18);
-		//
-		// imageCanvas.showImage(frame);
-		// canvas.showImage(foreground);
+		// copy the original frame to draw on it
+		IplImage orig = grabbedImage.clone();
 
-		// original frame,am ende rechtecke draufzeichnen
-		IplImage orig = frame.clone();
-
-		cvSmooth(frame, frame, CV_GAUSSIAN, 9, 9, 2, 2);
-		if (image == null) {
-			image = IplImage.create(frame.width(), frame.height(),
-					IPL_DEPTH_8U, 1);
-			cvCvtColor(frame, image, CV_RGB2GRAY);
-		} else {
-			prevImage = IplImage.create(frame.width(), frame.height(),
-					IPL_DEPTH_8U, 1);
-			prevImage = image;
-			image = IplImage.create(frame.width(), frame.height(),
-					IPL_DEPTH_8U, 1);
-			cvCvtColor(frame, image, CV_RGB2GRAY);
-			cvThreshold(image, image, thres, 255, CV_THRESH_BINARY);
-
-			// 3x3 Median filter
-			cvSmooth(image, image, CV_MEDIAN, 3, 3, 2, 2);
-
-			// morph. schliessen
-			cvDilate(image, image, null, 3);
-			cvErode(image, image, null, 3);
-
-			// cvCanny(image, image, 80, 120, 3);
-
-		}
-		// canvasFrame.showImage(frame);
-
-		if (diff == null) {
-			diff = IplImage.create(frame.width(), frame.height(), IPL_DEPTH_8U,
-					1);
+		if (foreground == null) {
+			foreground = IplImage.create(grabbedImage.width(),
+					grabbedImage.height(), IPL_DEPTH_8U, 1);
 		}
 
-		if (prevImage != null) {
-			// perform ABS difference
-			// cvAbsDiff(image, prevImage, diff);
-			// // do some threshold for wipe away useless details
-			// cvThreshold(diff, diff, 50, 255, CV_THRESH_BINARY);
-			//
-			// // recognize contours
-			//
-			cvFindContours(image, storage, contour,
-					Loader.sizeof(CvContour.class), CV_RETR_LIST,
-					CV_CHAIN_APPROX_SIMPLE);
-			// cvDilate(diff, diff, null, 3);
-			// cvErode(diff, diff, null, 3);
+		// eliminate background
+		mog.apply(grabbedImage, foreground, -1);
 
-			CvRect boundbox;
+		// morph. close
+		cvDilate(foreground, foreground, null, 4);
+		cvErode(foreground, foreground, null, 5);
 
-			int cnt = 0;
-			for (ptr = contour; ptr != null; ptr = ptr.h_next()) {
+		// 9x9 Median Filter
+		cvSmooth(foreground, foreground, CV_MEDIAN, 9, 9, 2, 2);
 
-				boundbox = cvBoundingRect(ptr, 0);
+		// 9x9 Gauss Filter
+		cvSmooth(foreground, foreground, CV_GAUSSIAN, 9, 9, 2, 2);
 
+		// morph. close again
+		cvDilate(foreground, foreground, null, 4);
+		cvErode(foreground, foreground, null, 5);
+
+		// find and save contours
+		cvFindContours(foreground, storage, contour,
+				Loader.sizeof(CvContour.class), CV_RETR_LIST,
+				CV_CHAIN_APPROX_SIMPLE);
+
+		CvRect boundbox;
+
+		int cnt = 0;
+
+		// iterate over the contours (countour = blob)
+		for (ptr = contour; ptr != null; ptr = ptr.h_next()) {
+
+			// get the bounding Box surrounding the contour area
+			boundbox = cvBoundingRect(ptr, 0);
+
+			if (boundbox.y() < 278) {// bugfix: ignore bottom of the picture
+										// (noise)
+
+				// draw a number to identify the blob
+				cvPutText(orig, " " + cnt, cvPoint(boundbox.x(), boundbox.y()),
+						font, CvScalar.RED);
+
+				// draw a rectangle around the blob
 				cvRectangle(
 						orig,
 						cvPoint(boundbox.x(), boundbox.y()),
@@ -129,23 +142,19 @@ public class ImageProcessor {
 								+ boundbox.height()), CV_RGB(255, 0, 0), 1, 8,
 						0);
 
-				CvFont font = new CvFont(CV_FONT_HERSHEY_PLAIN, 1, 1);
-				cvPutText(orig, " " + cnt, cvPoint(boundbox.x(), boundbox.y()),
-						font, CvScalar.RED);
-
-				// Color randomColor = new Color(rand.nextFloat(),
-				// rand.nextFloat(), rand.nextFloat());
-				// CvScalar color = CV_RGB(randomColor.getRed(),
-				// randomColor.getGreen(), randomColor.getBlue());
-				// cvDrawContours(diff, ptr, color, CV_RGB(0, 0, 0), -1,
-				// CV_FILLED, 8, cvPoint(0, 0));
-
+				cnt++;
 			}
 
 		}
+
 		return orig.getBufferedImage();
 	}
 
+	/**
+	 * set threshold value
+	 * 
+	 * @param thres
+	 */
 	public void setThreshold(int thres) {
 		this.thres = thres;
 	}
