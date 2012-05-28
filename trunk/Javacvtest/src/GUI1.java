@@ -1,5 +1,6 @@
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Graphics;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -29,9 +30,11 @@ public class GUI1 extends JFrame implements ActionListener, ChangeListener {
 	private JLabel thresholdValue = new JLabel();
 	private JLabel threshold = new JLabel("Threshold: ");
 	private JLabel blobs = new JLabel("Blobs: ");
+	private JLabel time = new JLabel(": ");
 
 	private Videoplayer vplayer;
 	private ImageProcessor processor;
+	private boolean playing = false;
 
 	public GUI1() {
 		super("Motion Tracking");
@@ -80,12 +83,13 @@ public class GUI1 extends JFrame implements ActionListener, ChangeListener {
 		getContentPane().add("North", imagePanel);
 
 		getContentPane().add("North", settingsPanel);
-		settingsPanel.add(threshold);
-		settingsPanel.add(thresholdSldr);
-		settingsPanel.add(thresholdValue);
+		// settingsPanel.add(threshold);
+		// settingsPanel.add(thresholdSldr);
+		// settingsPanel.add(thresholdValue);
 		thresholdValue
 				.setText(new Integer(thresholdSldr.getValue()).toString());
-		settingsPanel.add(blobs);
+		// settingsPanel.add(blobs);
+		settingsPanel.add(time);
 
 	}
 
@@ -96,9 +100,10 @@ public class GUI1 extends JFrame implements ActionListener, ChangeListener {
 		if (e.getActionCommand().equals("open")) {
 
 			try {
-				if (vplayer.openURL(null))
+				if (vplayer.openURL(null)) {
 					pack();
-
+					playing = true;
+				}
 			} catch (Exception e1) {
 				JOptionPane.showMessageDialog(this,
 						"Cannot open the video file.");
@@ -111,9 +116,10 @@ public class GUI1 extends JFrame implements ActionListener, ChangeListener {
 			try {
 				if (vplayer
 						.openURL(new URL(
-								"file:/C:/Users/Márk/Documents/UNI/Visual Analisis of Human Motion/squash1.avi")))
+								"file:/C:/Users/Márk/Documents/UNI/Visual Analisis of Human Motion/squash1.avi"))) {
 					pack();
-
+					playing = true;
+				}
 			} catch (Exception e1) {
 				// e1.printStackTrace();
 				JOptionPane.showMessageDialog(this,
@@ -132,6 +138,13 @@ public class GUI1 extends JFrame implements ActionListener, ChangeListener {
 		thresholdValue
 				.setText(new Integer(thresholdSldr.getValue()).toString());
 		vplayer.setThreshold(value);
+
 	}
 
+	public void paint(Graphics g) {
+		super.paint(g);
+		if (playing)
+
+			repaint();
+	}
 }
