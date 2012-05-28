@@ -96,7 +96,6 @@ public class Videoplayer extends JPanel implements ActionListener {
 	}
 
 	private void grab() {
-
 		try {
 			Buffer buf = frameGrabber.grabFrame();
 			Image img = (new BufferToImage((VideoFormat) buf.getFormat())
@@ -111,7 +110,7 @@ public class Videoplayer extends JPanel implements ActionListener {
 
 		} catch (Exception ex) {
 			System.err.println("FrameGrabbing failed..");
-			ex.printStackTrace();
+			// ex.printStackTrace();
 		}
 
 	}
@@ -162,6 +161,10 @@ public class Videoplayer extends JPanel implements ActionListener {
 
 		imgProcessor.setThreshold(value);
 
+	}
+
+	public Double getTime() {
+		return p.getMediaTime().getSeconds();
 	}
 
 }
