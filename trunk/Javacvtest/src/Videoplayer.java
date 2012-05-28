@@ -6,16 +6,12 @@ import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
 import javax.media.Buffer;
-import javax.media.CannotRealizeException;
 import javax.media.Manager;
 import javax.media.MediaLocator;
-import javax.media.NoDataSourceException;
-import javax.media.NoPlayerException;
 import javax.media.Player;
 import javax.media.control.FrameGrabbingControl;
 import javax.media.format.VideoFormat;
@@ -27,39 +23,43 @@ import javax.swing.Timer;
 
 import com.googlecode.javacv.cpp.opencv_core.IplImage;
 
+/**
+ * Java Media Framework (JMF with FFMpeg plugin) plays the given video file,
+ * grabs the fames ,triggered by a timer, and hands it to the ImageProcessor.
+ * 
+ * 
+ * 
+ * @author Márk Ormos, Thomas Mayr
+ * @since 28.05.2012
+ * 
+ */
 public class Videoplayer extends JPanel implements ActionListener {
 
 	private DataSource ds;
 	private Player p = null;
 	private FrameGrabbingControl frameGrabber;
 	private BufferedImage buffImg = null;
+	/** Imagepanel to draw the processed image on */
 	private ImgPanel ip = null;
-	private ImageProcessor imgProcessor = new ImageProcessor();
+	private ImageProcessor imgProcessor;
 	private BufferedImage procImage = null;
 
-	public Videoplayer(ImgPanel imagePanel) {
+	public Videoplayer(ImgPanel imagePanel, ImageProcessor processor) {
 		ip = imagePanel;
+		imgProcessor = processor;
 
 	}
 
-	public boolean open(MediaLocator ml) {
+	/**
+	 * Opens and starts the video file
+	 * 
+	 * @param ml
+	 * @return
+	 */
+	public boolean open(MediaLocator ml) throws Exception {
 
-		try {
-			ds = Manager.createDataSource(ml);
-			p = Manager.createRealizedPlayer(ds);
-		} catch (NoDataSourceException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NoPlayerException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (CannotRealizeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		ds = Manager.createDataSource(ml);
+		p = Manager.createRealizedPlayer(ds);
 
 		setLayout(new BorderLayout());
 
@@ -77,6 +77,7 @@ public class Videoplayer extends JPanel implements ActionListener {
 
 		setVisible(true);
 
+		// Timer triggers the frame grabber
 		new Timer(100, this).start();
 		frameGrabber = (FrameGrabbingControl) p
 				.getControl("javax.media.control.FrameGrabbingControl");
@@ -84,10 +85,12 @@ public class Videoplayer extends JPanel implements ActionListener {
 		return true;
 	}
 
+	/**
+	 * 
+	 */
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
 		if (buffImg != null) {
-			// g.drawImage(buffImg, 0, 0, this);
 			ip.setImg(procImage);
 		}
 	}
@@ -106,31 +109,6 @@ public class Videoplayer extends JPanel implements ActionListener {
 
 			procImage = imgProcessor.process(IplImage.createFrom(buffImg));
 
-			// // Convert frame to an buffered image so it can be processed and
-			// // saved
-			// Image img = (new BufferToImage((VideoFormat)
-			// buf.getFormat()).createImage(buf));
-			// BufferedImage buffImg1 = new
-			// BufferedImage(img.getWidth(this),img.getHeight(this),
-			// BufferedImage.TYPE_INT_RGB);
-			// Graphics2D g = buffImg1.createGraphics();
-			// g.drawImage(img, 0,0, null);
-			// g.dispose();
-			// // BufferedImageOp grayscale = new
-			// ColorConvertOp(ColorSpace.getInstance(ColorSpace.CS_GRAY), null);
-			// // buffImg1 = grayscale.filter(buffImg1, null);
-			// BufferedImageOp thresholdOp =new LookupOp(new ShortLookupTable(0,
-			// threshold), null);
-			// buffImg = thresholdOp.filter(buffImg1, null);
-			//
-			// // image = IplImage.createFrom(buffImg1);
-			// // IplImage imgThreshold = cvCreateImage(cvGetSize(image), 8, 1);
-			// // cvInRangeS(image, cvScalar(100, 100, 100, 0), cvScalar(180,
-			// 255, 255, 0), imgThreshold);
-			// // cvReleaseImage(image);
-			// // cvSmooth(imgThreshold, imgThreshold, CV_MEDIAN, 13);
-			// // buffImg = imgThreshold.getBufferedImage();
-			//
 		} catch (Exception ex) {
 			System.err.println("FrameGrabbing failed..");
 			ex.printStackTrace();
@@ -144,8 +122,15 @@ public class Videoplayer extends JPanel implements ActionListener {
 		ip.repaint();
 	}
 
+	/**
+	 * gets the URL from the video file either by manual input or by searching
+	 * 
+	 * @param url
+	 *            URL of the video file, if null: File chooser dialog appears
+	 * @return true if URL is valid
+	 */
 	@SuppressWarnings("unused")
-	public boolean openURL(URL url) {
+	public boolean openURL(URL url) throws Exception {
 		if (url == null) {
 			JFileChooser fc = new JFileChooser();
 			int ret = fc.showDialog(null, "Open file");
@@ -157,11 +142,8 @@ public class Videoplayer extends JPanel implements ActionListener {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-
 			}
 		}
-
-		System.out.println(url);
 
 		MediaLocator mediaLocator;
 
