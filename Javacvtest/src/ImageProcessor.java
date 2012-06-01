@@ -64,7 +64,7 @@ public class ImageProcessor {
 	/** image to store the foreground */
 	IplImage foreground = null;
 	CanvasFrame canves = new CanvasFrame("ff");
-	// CanvasFrame testFrame = new CanvasFrame("test");
+	CanvasFrame testFrame = new CanvasFrame("test");
 
 	Point ptCurrentPlayer1 = null;
 	Point ptCurrentPlayer2 = null;
@@ -153,82 +153,77 @@ public class ImageProcessor {
 
 			List<Point> points = divideBlob(Biggestboundbox, ptPrevPlayer1,
 					ptPrevPlayer2);
-			System.out.println(points.size());
+			// System.out.println(points.size());
 			Point first = points.get(0);
 			// System.out.println(first.x + "/" + first.y);
 			Point last = points.get(points.size() - 1);
 			// System.out.println(last.x + "/" + last.y);
 
-			System.out.println(getBlobs(foreground));
-
 			cvLine(foreground, cvPoint(first.x, first.y),
-					cvPoint(last.x, last.y), CV_RGB(255, 255, 255), 1, 8, 0);
+					cvPoint(last.x, last.y), CV_RGB(0, 0, 0), 6, 8, 0);
+			cvLine(orig, cvPoint(first.x, first.y), cvPoint(last.x, last.y),
+					CV_RGB(0, 0, 0), 6, 8, 0);
 
+			System.out.println(getBlobs(foreground) + "= " + cnt + " blobs");
 			// testFrame.showImage(foreground);
 
-			ptCurrentPlayer1 = ptPrevPlayer1;
-			ptCurrentPlayer2 = ptPrevPlayer2;
-
-		} else {
-			// if more than one blob, get the position of the players by the
-			// center of the surrounding box
-			ptCurrentPlayer1 = new Point(
-					(Biggestboundbox.x() + Biggestboundbox.width() / 2),
-					(Biggestboundbox.y() + Biggestboundbox.height() / 2));
-
-			ptCurrentPlayer2 = new Point(
-					(Bigboundbox.x() + Bigboundbox.width() / 2),
-					(Bigboundbox.y() + Bigboundbox.height() / 2));
-
-			if (ptPrevPlayer1 != null && ptPrevPlayer2 != null) {
-
-				double distP1Prev1 = distance(ptCurrentPlayer1, ptPrevPlayer1);
-				double distP1Prev2 = distance(ptCurrentPlayer1, ptPrevPlayer2);
-
-				double distP2Prev2 = distance(ptCurrentPlayer2, ptPrevPlayer2);
-				double distP2Prev1 = distance(ptCurrentPlayer2, ptPrevPlayer1);
-
-				if (distP1Prev1 > distP1Prev2)
-
-				{
-					Point temp = ptCurrentPlayer1;
-					ptCurrentPlayer1 = ptCurrentPlayer2;
-					ptCurrentPlayer2 = temp;
-
-					boundbox = Biggestboundbox;
-					Biggestboundbox = Bigboundbox;
-					Bigboundbox = boundbox;
-
-				}
-				cvLine(orig, cvPoint(ptCurrentPlayer1.x, ptCurrentPlayer1.y),
-						cvPoint(ptPrevPlayer1.x, ptPrevPlayer1.y),
-						CV_RGB(255, 0, 0), 1, 8, 0);
-				cvLine(orig, cvPoint(ptCurrentPlayer2.x, ptCurrentPlayer2.y),
-						cvPoint(ptPrevPlayer2.x, ptPrevPlayer2.y),
-						CV_RGB(0, 255, 0), 1, 8, 0);
-			}
-
-			cvCircle(orig, cvPoint(ptCurrentPlayer1.x, ptCurrentPlayer1.y), 2,
-					CV_RGB(255, 0, 0), 1, 8, 0);
-
-			cvCircle(orig, cvPoint(ptCurrentPlayer2.x, ptCurrentPlayer2.y), 2,
-					CV_RGB(0, 255, 0), 1, 8, 0);
-
-			cvRectangle(
-					orig,
-					cvPoint(Biggestboundbox.x(), Biggestboundbox.y()),
-					cvPoint(Biggestboundbox.x() + Biggestboundbox.width(),
-							Biggestboundbox.y() + Biggestboundbox.height()),
-					CV_RGB(255, 0, 0), 1, 8, 0);
-
-			cvRectangle(
-					orig,
-					cvPoint(Bigboundbox.x(), Bigboundbox.y()),
-					cvPoint(Bigboundbox.x() + Bigboundbox.width(),
-							Bigboundbox.y() + Bigboundbox.height()),
-					CV_RGB(0, 255, 0), 1, 8, 0);
-
 		}
+		// if more than one blob, get the position of the players by the
+		// center of the surrounding box
+		ptCurrentPlayer1 = new Point(
+				(Biggestboundbox.x() + Biggestboundbox.width() / 2),
+				(Biggestboundbox.y() + Biggestboundbox.height() / 2));
+
+		ptCurrentPlayer2 = new Point(
+				(Bigboundbox.x() + Bigboundbox.width() / 2),
+				(Bigboundbox.y() + Bigboundbox.height() / 2));
+
+		if (ptPrevPlayer1 != null && ptPrevPlayer2 != null) {
+
+			double distP1Prev1 = distance(ptCurrentPlayer1, ptPrevPlayer1);
+			double distP1Prev2 = distance(ptCurrentPlayer1, ptPrevPlayer2);
+
+			double distP2Prev2 = distance(ptCurrentPlayer2, ptPrevPlayer2);
+			double distP2Prev1 = distance(ptCurrentPlayer2, ptPrevPlayer1);
+
+			if (distP1Prev1 > distP1Prev2)
+
+			{
+				Point temp = ptCurrentPlayer1;
+				ptCurrentPlayer1 = ptCurrentPlayer2;
+				ptCurrentPlayer2 = temp;
+
+				boundbox = Biggestboundbox;
+				Biggestboundbox = Bigboundbox;
+				Bigboundbox = boundbox;
+
+			}
+			cvLine(orig, cvPoint(ptCurrentPlayer1.x, ptCurrentPlayer1.y),
+					cvPoint(ptPrevPlayer1.x, ptPrevPlayer1.y),
+					CV_RGB(255, 0, 0), 1, 8, 0);
+			cvLine(orig, cvPoint(ptCurrentPlayer2.x, ptCurrentPlayer2.y),
+					cvPoint(ptPrevPlayer2.x, ptPrevPlayer2.y),
+					CV_RGB(0, 255, 0), 1, 8, 0);
+		}
+
+		cvCircle(orig, cvPoint(ptCurrentPlayer1.x, ptCurrentPlayer1.y), 2,
+				CV_RGB(255, 0, 0), 1, 8, 0);
+
+		cvCircle(orig, cvPoint(ptCurrentPlayer2.x, ptCurrentPlayer2.y), 2,
+				CV_RGB(0, 255, 0), 1, 8, 0);
+
+		cvRectangle(
+				orig,
+				cvPoint(Biggestboundbox.x(), Biggestboundbox.y()),
+				cvPoint(Biggestboundbox.x() + Biggestboundbox.width(),
+						Biggestboundbox.y() + Biggestboundbox.height()),
+				CV_RGB(255, 0, 0), 1, 8, 0);
+
+		cvRectangle(
+				orig,
+				cvPoint(Bigboundbox.x(), Bigboundbox.y()),
+				cvPoint(Bigboundbox.x() + Bigboundbox.width(), Bigboundbox.y()
+						+ Bigboundbox.height()), CV_RGB(0, 255, 0), 1, 8, 0);
 
 		cvRectangle(orig, cvPoint(10, 10), cvPoint(365, 270),
 				CV_RGB(0, 0, 255), 1, 8, 0);
