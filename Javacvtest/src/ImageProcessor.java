@@ -144,12 +144,6 @@ public class ImageProcessor {
 
 		if (cnt == 1) { // if there is only one blob then collosion
 			// System.out.println("collosion");
-			cvRectangle(
-					orig,
-					cvPoint(Biggestboundbox.x(), Biggestboundbox.y()),
-					cvPoint(Biggestboundbox.x() + Biggestboundbox.width(),
-							Biggestboundbox.y() + Biggestboundbox.height()),
-					CV_RGB(255, 0, 0), 1, 8, 0);
 
 			List<Point> points = divideBlob(Biggestboundbox, ptPrevPlayer1,
 					ptPrevPlayer2);
