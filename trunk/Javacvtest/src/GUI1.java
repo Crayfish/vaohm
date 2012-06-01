@@ -5,38 +5,48 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.URL;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 import javax.swing.JFrame;
-import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 
+/**
+ * Graphical user Interface
+ * 
+ * @author Mark Ormos, Thomas Mayr
+ * 
+ */
 public class GUI1 extends JFrame implements ActionListener {
 	/* GUI Components */
 	private JMenuBar menuBar = new JMenuBar();
 	private JMenu mnFile = new JMenu("File");
 	private JMenuItem mntmOpenFromFile = new JMenuItem("Open from file...");
 	private JMenuItem mntmSquash1 = new JMenuItem("Squash1.avi");
+	private JMenuItem mnSave = new JMenuItem("Show data");
 	private JPanel vpanel = new JPanel();
 	private ImgPanel imagePanel = new ImgPanel();
 	private JPanel settingsPanel = new JPanel();
-	private JLabel blobs = new JLabel("Blobs: ");
-	private JLabel time = new JLabel(": ");
 
 	private Videoplayer vplayer;
 	private ImageProcessor processor;
 	private boolean playing = false;
+	List<Data> dataCollector = new LinkedList<Data>();
 
 	public GUI1() {
 		super("Motion Tracking");
 
-		this.setPreferredSize(new Dimension(800, 500));
+		this.setPreferredSize(new Dimension(800, 400));
 		this.setLocation(
 				(Toolkit.getDefaultToolkit().getScreenSize().width - 800) / 2,
-				(Toolkit.getDefaultToolkit().getScreenSize().height - 700) / 2);
+				(Toolkit.getDefaultToolkit().getScreenSize().height - 400) / 2);
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -64,8 +74,13 @@ public class GUI1 extends JFrame implements ActionListener {
 		mntmSquash1.addActionListener(this);
 		mntmSquash1.setActionCommand("squash1");
 
+		mnFile.add(mnSave);
+		mnSave.addActionListener(this);
+		mnSave.setActionCommand("save");
+
 		/* Layout issues */
-		vplayer = new Videoplayer(imagePanel, processor = new ImageProcessor());
+		vplayer = new Videoplayer(imagePanel, processor = new ImageProcessor(
+				dataCollector));
 		getContentPane().setLayout(new FlowLayout());
 		vpanel.setPreferredSize(new Dimension(384, 315));
 		getContentPane().add("North", vpanel);
@@ -75,11 +90,6 @@ public class GUI1 extends JFrame implements ActionListener {
 		getContentPane().add("North", imagePanel);
 
 		getContentPane().add("North", settingsPanel);
-		// settingsPanel.add(threshold);
-		// settingsPanel.add(thresholdSldr);
-		// settingsPanel.add(thresholdValue);
-		// settingsPanel.add(blobs);
-		settingsPanel.add(time);
 
 	}
 
@@ -116,6 +126,25 @@ public class GUI1 extends JFrame implements ActionListener {
 						"Cannot open the video file.");
 			}
 
+		}
+		if (e.getActionCommand().equals("save")) {
+
+			String[] data = new String[dataCollector.size() + 1];
+			Iterator<Data> it = dataCollector.iterator();
+			data[0] = "Time   Player1   Player2";
+			for (int i = 1; it.hasNext(); i++) {
+				data[i] = it.next().print();
+			}
+
+			JFrame dataFrame = new JFrame("Squash data");
+
+			JList<String> list = new JList<String>(data);
+			JScrollPane listScroller = new JScrollPane(list);
+			dataFrame.getContentPane().add(listScroller);
+
+			dataFrame.setSize(new Dimension(400, 600));
+			dataFrame.setVisible(true);
+			pack();
 		}
 
 	}
