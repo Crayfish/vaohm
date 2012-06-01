@@ -17,6 +17,8 @@ import static com.googlecode.javacv.cpp.opencv_imgproc.cvSmooth;
 
 import java.awt.Point;
 import java.awt.image.BufferedImage;
+import java.util.LinkedList;
+import java.util.List;
 
 import com.googlecode.javacpp.Loader;
 import com.googlecode.javacv.CanvasFrame;
@@ -62,12 +64,25 @@ public class ImageProcessor {
 	/** image to store the foreground */
 	IplImage foreground = null;
 	CanvasFrame canves = new CanvasFrame("ff");
+	// CanvasFrame testFrame = new CanvasFrame("test");
 
 	Point ptCurrentPlayer1 = null;
 	Point ptCurrentPlayer2 = null;
 
 	Point ptPrevPlayer1 = null;
 	Point ptPrevPlayer2 = null;
+
+	/** counts the blobs in the image */
+	int cnt = 0;
+
+	/** stores the current surrounding rect for a blob */
+	CvRect boundbox = null;
+	/** stores the biggest blob in the image */
+	CvRect Biggestboundbox = null;
+	/** stores the second biggest blob in the image */
+	CvRect Bigboundbox = null;
+
+	IplImage orig = null;
 
 	/**
 	 * Default constructor
@@ -97,7 +112,7 @@ public class ImageProcessor {
 	public synchronized BufferedImage process(IplImage grabbedImage) {
 
 		// copy the original frame to draw on it
-		IplImage orig = grabbedImage.clone();
+		orig = grabbedImage.clone();
 
 		if (foreground == null) {
 			foreground = IplImage.create(grabbedImage.width(),
@@ -121,60 +136,35 @@ public class ImageProcessor {
 		cvDilate(foreground, foreground, null, 3);
 		cvErode(foreground, foreground, null, 3);
 		canves.showImage(foreground);
-		// find and save contours
-		cvFindContours(foreground, storage, contour,
-				Loader.sizeof(CvContour.class), CV_RETR_LIST,
-				CV_CHAIN_APPROX_SIMPLE);
 
-		CvRect boundbox;
-		CvRect Biggestboundbox = null;
-		CvRect Bigboundbox = null;
-		// count the blobs
-		int cnt = 0;
-
-		// System.out.println(orig.width() + "x" + orig.height());
-
-		// iterate over the contours (countour = blob)
-		// get the two biggest blobs (=players)
-		for (ptr = contour; ptr != null; ptr = ptr.h_next()) {
-
-			// get the bounding Box surrounding the contour area
-			boundbox = cvBoundingRect(ptr, 0);
-
-			if (boundbox.y() > 10 && boundbox.y() < 270 && boundbox.x() > 10
-					&& boundbox.x() < 360) { // ignore at the borders (too
-												// noisy, squash 1.avi)
-
-				// get the two biggest blobs
-				if (Biggestboundbox == null) {
-					Biggestboundbox = boundbox;
-				} else if (Bigboundbox == null) {
-					Bigboundbox = boundbox;
-
-				} else if ((Biggestboundbox.width() * Biggestboundbox.height()) < (boundbox
-						.width() * boundbox.height())) {
-					Bigboundbox = Biggestboundbox;
-					Biggestboundbox = boundbox;
-				} else if ((Bigboundbox.width() * Bigboundbox.height()) < (boundbox
-						.width() * boundbox.height())) {
-					Bigboundbox = boundbox;
-				}
-
-				cnt++;
-			}
-
-		}
+		// find and save blobs
+		getBlobs(foreground);
 
 		// System.out.println(cnt);
 
 		if (cnt == 1) { // if there is only one blob then collosion
-			System.out.println("collosion");
+			// System.out.println("collosion");
 			cvRectangle(
 					orig,
 					cvPoint(Biggestboundbox.x(), Biggestboundbox.y()),
 					cvPoint(Biggestboundbox.x() + Biggestboundbox.width(),
 							Biggestboundbox.y() + Biggestboundbox.height()),
 					CV_RGB(255, 0, 0), 1, 8, 0);
+
+			List<Point> points = divideBlob(Biggestboundbox, ptPrevPlayer1,
+					ptPrevPlayer2);
+			System.out.println(points.size());
+			Point first = points.get(0);
+			// System.out.println(first.x + "/" + first.y);
+			Point last = points.get(points.size() - 1);
+			// System.out.println(last.x + "/" + last.y);
+
+			System.out.println(getBlobs(foreground));
+
+			cvLine(foreground, cvPoint(first.x, first.y),
+					cvPoint(last.x, last.y), CV_RGB(255, 255, 255), 1, 8, 0);
+
+			// testFrame.showImage(foreground);
 
 			ptCurrentPlayer1 = ptPrevPlayer1;
 			ptCurrentPlayer2 = ptPrevPlayer2;
@@ -192,8 +182,13 @@ public class ImageProcessor {
 
 			if (ptPrevPlayer1 != null && ptPrevPlayer2 != null) {
 
-				if ((distance(ptCurrentPlayer1, ptPrevPlayer1) > distance(
-						ptCurrentPlayer1, ptPrevPlayer2)))
+				double distP1Prev1 = distance(ptCurrentPlayer1, ptPrevPlayer1);
+				double distP1Prev2 = distance(ptCurrentPlayer1, ptPrevPlayer2);
+
+				double distP2Prev2 = distance(ptCurrentPlayer2, ptPrevPlayer2);
+				double distP2Prev1 = distance(ptCurrentPlayer2, ptPrevPlayer1);
+
+				if (distP1Prev1 > distP1Prev2)
 
 				{
 					Point temp = ptCurrentPlayer1;
@@ -235,7 +230,7 @@ public class ImageProcessor {
 
 		}
 
-		cvRectangle(orig, cvPoint(10, 10), cvPoint(360, 270),
+		cvRectangle(orig, cvPoint(10, 10), cvPoint(365, 270),
 				CV_RGB(0, 0, 255), 1, 8, 0);
 
 		ptPrevPlayer1 = ptCurrentPlayer1;
@@ -257,6 +252,95 @@ public class ImageProcessor {
 		int yDiff = Math.abs(p1.y - p2.y);
 
 		return Math.sqrt(Math.exp(xDiff) + Math.exp(yDiff));
+
+	}
+
+	/**
+	 * finds the blobs in the processed image
+	 * 
+	 * @param foreground
+	 *            the processed image
+	 */
+	private int getBlobs(IplImage foreground) {
+
+		cvFindContours(foreground, storage, contour,
+				Loader.sizeof(CvContour.class), CV_RETR_LIST,
+				CV_CHAIN_APPROX_SIMPLE);
+
+		boundbox = null;
+		Biggestboundbox = null;
+		Bigboundbox = null;
+		// count the blobs
+		cnt = 0;
+
+		// System.out.println(orig.width() + "x" + orig.height());
+
+		// iterate over the contours (countour = blob)
+		// get the two biggest blobs (=players)
+		for (ptr = contour; ptr != null; ptr = ptr.h_next()) {
+
+			// get the bounding Box surrounding the contour area
+			boundbox = cvBoundingRect(ptr, 0);
+
+			if (boundbox.y() > 10 && boundbox.y() < 270 && boundbox.x() > 10
+					&& boundbox.x() < 365) { // ignore at the borders (too
+												// noisy, squash 1.avi)
+
+				// get the two biggest blobs
+				if (Biggestboundbox == null) {
+					Biggestboundbox = boundbox;
+				} else if (Bigboundbox == null) {
+					Bigboundbox = boundbox;
+
+				} else if ((Biggestboundbox.width() * Biggestboundbox.height()) < (boundbox
+						.width() * boundbox.height())) {
+					Bigboundbox = Biggestboundbox;
+					Biggestboundbox = boundbox;
+				} else if ((Bigboundbox.width() * Bigboundbox.height()) < (boundbox
+						.width() * boundbox.height())) {
+					Bigboundbox = boundbox;
+				}
+
+				cnt++;
+			}
+
+		}
+		return cnt;
+	}
+
+	/**
+	 * divide the blob if collosion occures, use the previous positions of the
+	 * players
+	 * 
+	 * @param width
+	 * @param height
+	 * @param p1
+	 * @param p2
+	 */
+	private List<Point> divideBlob(CvRect boundbox, Point p1, Point p2) {
+
+		int width = boundbox.width();
+		int height = boundbox.height();
+
+		// make the points relative to the boundbox
+		Point player1 = new Point(p1.x - boundbox.x(), p1.y - boundbox.y());
+		Point player2 = new Point(p2.x - boundbox.x(), p2.y - boundbox.y());
+
+		Point current;
+
+		List<Point> points = new LinkedList<Point>();
+
+		for (int i = 0; i < height; i++) {
+			for (int j = 0; j < width; j++) {
+				current = new Point(j, i);
+				if (Math.round(distance(current, player1)) == Math
+						.round(distance(current, player2))) {
+					points.add(new Point(j + boundbox.x(), i + boundbox.y()));
+				}
+			}
+
+		}
+		return points;
 
 	}
 
