@@ -129,6 +129,7 @@ public class ImageProcessor {
 		CvRect boundbox;
 		CvRect Biggestboundbox = null;
 		CvRect Bigboundbox = null;
+		// count the blobs
 		int cnt = 0;
 
 		// System.out.println(orig.width() + "x" + orig.height());
@@ -144,28 +145,43 @@ public class ImageProcessor {
 					&& boundbox.x() < 360) { // ignore at the borders (too
 												// noisy, squash 1.avi)
 
+				// get the two biggest blobs
 				if (Biggestboundbox == null) {
 					Biggestboundbox = boundbox;
-
 				} else if (Bigboundbox == null) {
 					Bigboundbox = boundbox;
+
 				} else if ((Biggestboundbox.width() * Biggestboundbox.height()) < (boundbox
 						.width() * boundbox.height())) {
+					Bigboundbox = Biggestboundbox;
 					Biggestboundbox = boundbox;
 				} else if ((Bigboundbox.width() * Bigboundbox.height()) < (boundbox
 						.width() * boundbox.height())) {
 					Bigboundbox = boundbox;
 				}
-				// draw a rectangle around the blob
 
 				cnt++;
 			}
 
 		}
 
-		System.out.println(cnt);
+		// System.out.println(cnt);
 
-		try {
+		if (cnt == 1) { // if there is only one blob then collosion
+			System.out.println("collosion");
+			cvRectangle(
+					orig,
+					cvPoint(Biggestboundbox.x(), Biggestboundbox.y()),
+					cvPoint(Biggestboundbox.x() + Biggestboundbox.width(),
+							Biggestboundbox.y() + Biggestboundbox.height()),
+					CV_RGB(255, 0, 0), 1, 8, 0);
+
+			ptCurrentPlayer1 = ptPrevPlayer1;
+			ptCurrentPlayer2 = ptPrevPlayer2;
+
+		} else {
+			// if more than one blob, get the position of the players by the
+			// center of the surrounding box
 			ptCurrentPlayer1 = new Point(
 					(Biggestboundbox.x() + Biggestboundbox.width() / 2),
 					(Biggestboundbox.y() + Biggestboundbox.height() / 2));
@@ -175,17 +191,26 @@ public class ImageProcessor {
 					(Bigboundbox.y() + Bigboundbox.height() / 2));
 
 			if (ptPrevPlayer1 != null && ptPrevPlayer2 != null) {
+
 				if ((distance(ptCurrentPlayer1, ptPrevPlayer1) > distance(
-						ptCurrentPlayer1, ptPrevPlayer2))
-						&& (distance(ptCurrentPlayer1, ptPrevPlayer2) < 100)) {
+						ptCurrentPlayer1, ptPrevPlayer2)))
+
+				{
 					Point temp = ptCurrentPlayer1;
 					ptCurrentPlayer1 = ptCurrentPlayer2;
 					ptCurrentPlayer2 = temp;
-					cvLine(orig,
-							cvPoint(ptCurrentPlayer1.x, ptCurrentPlayer1.y),
-							cvPoint(ptPrevPlayer1.x, ptPrevPlayer1.y),
-							CV_RGB(255, 0, 0), 1, 8, 0);
+
+					boundbox = Biggestboundbox;
+					Biggestboundbox = Bigboundbox;
+					Bigboundbox = boundbox;
+
 				}
+				cvLine(orig, cvPoint(ptCurrentPlayer1.x, ptCurrentPlayer1.y),
+						cvPoint(ptPrevPlayer1.x, ptPrevPlayer1.y),
+						CV_RGB(255, 0, 0), 1, 8, 0);
+				cvLine(orig, cvPoint(ptCurrentPlayer2.x, ptCurrentPlayer2.y),
+						cvPoint(ptPrevPlayer2.x, ptPrevPlayer2.y),
+						CV_RGB(0, 255, 0), 1, 8, 0);
 			}
 
 			cvCircle(orig, cvPoint(ptCurrentPlayer1.x, ptCurrentPlayer1.y), 2,
@@ -208,12 +233,10 @@ public class ImageProcessor {
 							Bigboundbox.y() + Bigboundbox.height()),
 					CV_RGB(0, 255, 0), 1, 8, 0);
 
-			cvRectangle(orig, cvPoint(10, 10), cvPoint(360, 270),
-					CV_RGB(0, 0, 255), 1, 8, 0);
-
-		} catch (Exception ex) {
-			System.out.println("collosion");
 		}
+
+		cvRectangle(orig, cvPoint(10, 10), cvPoint(360, 270),
+				CV_RGB(0, 0, 255), 1, 8, 0);
 
 		ptPrevPlayer1 = ptCurrentPlayer1;
 		ptPrevPlayer2 = ptCurrentPlayer2;
