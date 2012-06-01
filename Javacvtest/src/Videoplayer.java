@@ -106,7 +106,8 @@ public class Videoplayer extends JPanel implements ActionListener {
 			g.drawImage(img, 0, 0, null);
 			g.dispose();
 
-			procImage = imgProcessor.process(IplImage.createFrom(buffImg));
+			procImage = imgProcessor.process(IplImage.createFrom(buffImg), p
+					.getMediaTime().getSeconds());
 
 		} catch (Exception ex) {
 			System.err.println("FrameGrabbing failed..");
@@ -155,10 +156,6 @@ public class Videoplayer extends JPanel implements ActionListener {
 			return false;
 		}
 		return true;
-	}
-
-	public Double getTime() {
-		return p.getMediaTime().getSeconds();
 	}
 
 }
