@@ -157,12 +157,6 @@ public class Videoplayer extends JPanel implements ActionListener {
 		return true;
 	}
 
-	public void setThreshold(int value) {
-
-		imgProcessor.setThreshold(value);
-
-	}
-
 	public Double getTime() {
 		return p.getMediaTime().getSeconds();
 	}

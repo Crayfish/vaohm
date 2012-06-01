@@ -2,6 +2,7 @@ import static com.googlecode.javacv.cpp.opencv_core.CV_FONT_HERSHEY_PLAIN;
 import static com.googlecode.javacv.cpp.opencv_core.CV_RGB;
 import static com.googlecode.javacv.cpp.opencv_core.IPL_DEPTH_8U;
 import static com.googlecode.javacv.cpp.opencv_core.cvCircle;
+import static com.googlecode.javacv.cpp.opencv_core.cvLine;
 import static com.googlecode.javacv.cpp.opencv_core.cvPoint;
 import static com.googlecode.javacv.cpp.opencv_core.cvRectangle;
 import static com.googlecode.javacv.cpp.opencv_imgproc.CV_CHAIN_APPROX_SIMPLE;
@@ -130,13 +131,15 @@ public class ImageProcessor {
 		CvRect Bigboundbox = null;
 		int cnt = 0;
 
+		System.out.println(orig.width() + "x" + orig.height());
+
 		// iterate over the contours (countour = blob)
 		// get the two biggest blobs (=players)
 		for (ptr = contour; ptr != null; ptr = ptr.h_next()) {
 
 			// get the bounding Box surrounding the contour area
-
 			boundbox = cvBoundingRect(ptr, 0);
+
 			if (boundbox.y() < 278
 					|| boundbox.x() + boundbox.width() == foreground.width()) {
 
@@ -167,12 +170,16 @@ public class ImageProcessor {
 				(Bigboundbox.x() + Bigboundbox.width() / 2),
 				(Bigboundbox.y() + Bigboundbox.height() / 2));
 
-		if (ptPrevPlayer1 != null || ptPrevPlayer2 != null) {
-			if (distance(ptCurrentPlayer1, ptPrevPlayer1) > distance(
-					ptCurrentPlayer1, ptPrevPlayer2)) {
+		if (ptPrevPlayer1 != null && ptPrevPlayer2 != null) {
+			if ((distance(ptCurrentPlayer1, ptPrevPlayer1) > distance(
+					ptCurrentPlayer1, ptPrevPlayer2))
+					&& (distance(ptCurrentPlayer1, ptPrevPlayer2) < 100)) {
 				Point temp = ptCurrentPlayer1;
 				ptCurrentPlayer1 = ptCurrentPlayer2;
 				ptCurrentPlayer2 = temp;
+				cvLine(orig, cvPoint(ptCurrentPlayer1.x, ptCurrentPlayer1.y),
+						cvPoint(ptPrevPlayer1.x, ptPrevPlayer1.y),
+						CV_RGB(255, 0, 0), 1, 8, 0);
 			}
 		}
 
@@ -201,14 +208,14 @@ public class ImageProcessor {
 	}
 
 	/**
-	 * set threshold value
+	 * calculate the distance between 2 Points
 	 * 
-	 * @param thres
+	 * @param p1
+	 *            point 1
+	 * @param p2
+	 *            point 2
+	 * @return the distance
 	 */
-	public void setThreshold(int thres) {
-		this.thres = thres;
-	}
-
 	private double distance(Point p1, Point p2) {
 		int xDiff = Math.abs(p1.x - p2.x);
 		int yDiff = Math.abs(p1.y - p2.y);
