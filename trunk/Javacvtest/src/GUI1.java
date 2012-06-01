@@ -33,7 +33,7 @@ public class GUI1 extends JFrame implements ActionListener {
 	private JPanel vpanel = new JPanel();
 	private ImgPanel imagePanel = new ImgPanel("output");
 	private ImgPanel ipBlobs = new ImgPanel("blob view");
-	private ImgPanel ipCollide = new ImgPanel("collosion view");
+	private ImgPanel ipCollide = new ImgPanel("collision view");
 
 	private Videoplayer vplayer;
 	private ImageProcessor processor;
