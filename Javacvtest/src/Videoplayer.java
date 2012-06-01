@@ -8,6 +8,7 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 
 import javax.media.Buffer;
 import javax.media.Manager;
@@ -35,17 +36,50 @@ import com.googlecode.javacv.cpp.opencv_core.IplImage;
  */
 public class Videoplayer extends JPanel implements ActionListener {
 
+	/** datasource for video */
 	private DataSource ds;
+
+	/** the video player, plays the video */
 	private Player p = null;
+
+	/** framegrabber grabs the frames of the video, triggered by the timer */
 	private FrameGrabbingControl frameGrabber;
+
+	/** temp image for the frame grabber */
 	private BufferedImage buffImg = null;
+
 	/** Imagepanel to draw the processed image on */
 	private ImgPanel ip = null;
-	private ImageProcessor imgProcessor;
-	private BufferedImage procImage = null;
 
-	public Videoplayer(ImgPanel imagePanel, ImageProcessor processor) {
+	/** Imagepanel for blob view */
+	private ImgPanel ipBlobs = null;
+
+	/** Image Panel for the collide view */
+	private ImgPanel ipCollide = null;
+
+	/** Imageprocessor processes the frames */
+	private ImageProcessor imgProcessor;
+
+	/** List of images returning from the Image processor */
+	private List<BufferedImage> images;
+
+	/***
+	 * Default Constructor
+	 * 
+	 * @param imagePanel
+	 *            for processed image output
+	 * @param ipBlobs
+	 *            for blob view
+	 * @param ipCollide
+	 *            for collide view
+	 * @param processor
+	 *            for image processing
+	 */
+	public Videoplayer(ImgPanel imagePanel, ImgPanel ipBlobs,
+			ImgPanel ipCollide, ImageProcessor processor) {
 		ip = imagePanel;
+		this.ipBlobs = ipBlobs;
+		this.ipCollide = ipCollide;
 		imgProcessor = processor;
 
 	}
@@ -54,7 +88,8 @@ public class Videoplayer extends JPanel implements ActionListener {
 	 * Opens and starts the video file
 	 * 
 	 * @param ml
-	 * @return
+	 *            standard Media Locator
+	 * @return true if media could be opened
 	 */
 	public boolean open(MediaLocator ml) throws Exception {
 
@@ -63,14 +98,9 @@ public class Videoplayer extends JPanel implements ActionListener {
 
 		setLayout(new BorderLayout());
 
-		Component cc;
 		Component vc;
 		if ((vc = p.getVisualComponent()) != null) {
 			add("Center", vc);
-		}
-
-		if ((cc = p.getControlPanelComponent()) != null) {
-			add("South", cc);
 		}
 
 		p.start();
@@ -79,6 +109,7 @@ public class Videoplayer extends JPanel implements ActionListener {
 
 		// Timer triggers the frame grabber
 		new Timer(100, this).start();
+
 		frameGrabber = (FrameGrabbingControl) p
 				.getControl("javax.media.control.FrameGrabbingControl");
 
@@ -86,15 +117,25 @@ public class Videoplayer extends JPanel implements ActionListener {
 	}
 
 	/**
-	 * 
+	 * set the images for all views at every repaint();
 	 */
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
 		if (buffImg != null) {
-			ip.setImg(procImage);
+			if (images != null) {
+				ip.setImg(images.get(2));
+				ipBlobs.setImg(images.get(0));
+				ipCollide.setImg(images.get(1));
+			}
+
 		}
 	}
 
+	/***
+	 * grabs the image from the video
+	 * 
+	 * triggered by the Timer
+	 */
 	private void grab() {
 		try {
 			Buffer buf = frameGrabber.grabFrame();
@@ -106,20 +147,25 @@ public class Videoplayer extends JPanel implements ActionListener {
 			g.drawImage(img, 0, 0, null);
 			g.dispose();
 
-			procImage = imgProcessor.process(IplImage.createFrom(buffImg), p
+			images = imgProcessor.process(IplImage.createFrom(buffImg), p
 					.getMediaTime().getSeconds());
 
 		} catch (Exception ex) {
 			System.err.println("FrameGrabbing failed..");
-			// ex.printStackTrace();
+			ex.printStackTrace();
 		}
 
 	}
 
+	/***
+	 * refresh all imagepanels at every imagegrab
+	 */
 	public void actionPerformed(ActionEvent e) {
 		grab();
 		repaint();
 		ip.repaint();
+		ipBlobs.repaint();
+		ipCollide.repaint();
 	}
 
 	/**
@@ -139,7 +185,6 @@ public class Videoplayer extends JPanel implements ActionListener {
 				try {
 					url = fc.getSelectedFile().toURL();
 				} catch (MalformedURLException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}

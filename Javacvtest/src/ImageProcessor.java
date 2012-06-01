@@ -1,4 +1,3 @@
-import static com.googlecode.javacv.cpp.opencv_core.CV_FONT_HERSHEY_PLAIN;
 import static com.googlecode.javacv.cpp.opencv_core.CV_RGB;
 import static com.googlecode.javacv.cpp.opencv_core.IPL_DEPTH_8U;
 import static com.googlecode.javacv.cpp.opencv_core.cvCircle;
@@ -23,7 +22,6 @@ import java.util.List;
 
 import com.googlecode.javacpp.Loader;
 import com.googlecode.javacv.cpp.opencv_core.CvContour;
-import com.googlecode.javacv.cpp.opencv_core.CvFont;
 import com.googlecode.javacv.cpp.opencv_core.CvMemStorage;
 import com.googlecode.javacv.cpp.opencv_core.CvRect;
 import com.googlecode.javacv.cpp.opencv_core.CvSeq;
@@ -43,57 +41,66 @@ import com.googlecode.javacv.cpp.opencv_video.BackgroundSubtractorMOG2;
  */
 public class ImageProcessor {
 
-	/** Threshold value */
-	private int thres = 120;
-
 	/** Sequent to store contours (blobs) */
-	CvSeq contour = new CvSeq(null);
+	private CvSeq contour = new CvSeq(null);
 
 	/** sequent used as pointer to contour */
-	CvSeq ptr = new CvSeq();
+	private CvSeq ptr = new CvSeq();
 
 	/** memory to store sequents */
-	CvMemStorage storage;
-
-	/** Font type to write on image */
-	CvFont font = new CvFont(CV_FONT_HERSHEY_PLAIN, 1, 1);
+	private CvMemStorage storage;
 
 	/** to eliminate the background */
-	BackgroundSubtractorMOG2 mog = new BackgroundSubtractorMOG2(30, 16, true);
+	private BackgroundSubtractorMOG2 mog = new BackgroundSubtractorMOG2(30, 16,
+			true);
 
 	/** image to store the foreground */
-	IplImage foreground = null;
+	private IplImage foreground = null;
+
+	/** to save the collide image */
+	private IplImage tempImg = null;
 	// CanvasFrame canves = new CanvasFrame("Blob View");
 	//
 	// CanvasFrame testFrame = new CanvasFrame("Collide View");
 
-	Point ptCurrentPlayer1 = null;
-	Point ptCurrentPlayer2 = null;
+	/** position of player 1 in the current frame */
+	private Point ptCurrentPlayer1 = null;
 
-	Point ptPrevPlayer1 = null;
-	Point ptPrevPlayer2 = null;
+	/** position of player 2 in the current frame */
+	private Point ptCurrentPlayer2 = null;
+
+	/** position of player 1 in the previous frame */
+	private Point ptPrevPlayer1 = null;
+
+	/** position of player 2 in the previous frame */
+	private Point ptPrevPlayer2 = null;
 
 	/** counts the blobs in the image */
-	int cnt = 0;
+	private int cnt = 0;
 
 	/** stores the current surrounding rect for a blob */
-	CvRect boundbox = null;
+	private CvRect boundbox = null;
+
 	/** stores the biggest blob in the image */
-	CvRect Biggestboundbox = null;
+	private CvRect Biggestboundbox = null;
+
 	/** stores the second biggest blob in the image */
-	CvRect Bigboundbox = null;
+	private CvRect Bigboundbox = null;
 
-	IplImage orig = null;
+	/** original frame too draw on */
+	private IplImage orig = null;
 
-	double currentTime;
+	/** List for collecting position data */
+	private List<Data> dataCollector;
 
-	List<Data> dataCollector = new LinkedList<Data>();
-
-	boolean blob = false;
+	/** to collect the images for displaying */
+	private List<BufferedImage> images;
 
 	/**
-	 * Default constructor
+	 * Default constructor for the Image processor
 	 * 
+	 * @param dataCollector
+	 *            List for collecting position data
 	 */
 	public ImageProcessor(List<Data> dataCollector) {
 		// Preload the opencv_objdetect module to work around a known bug
@@ -106,23 +113,34 @@ public class ImageProcessor {
 
 	/**
 	 * Processes the current frame of the video in order to detect and identify
-	 * the players
+	 * the players.
 	 * 
 	 * We use nearly the same approach for blob detection described in the paper
 	 * "A Low-Cost Real-Time Tracker of Live Sport Events"
 	 * 
-	 * 1. eliminate background 2. use filters and morph. operations to reduce
-	 * noise
+	 * 1. eliminate background
+	 * 
+	 * 2. use filters and morph. operations to reduce noise
+	 * 
+	 * 3. get the two biggest blobs. if there is only one blob, it is assumed
+	 * that the players collided.
+	 * 
+	 * 4. separate the blob if players are too near to each other
 	 * 
 	 * 
 	 * @param grabbedImage
 	 *            the current frame grabbed from the video
+	 * @param currentTime
+	 *            the timestamp of the current frame
 	 * @return input image with markers
 	 */
-	public synchronized BufferedImage process(IplImage grabbedImage,
+	public synchronized List<BufferedImage> process(IplImage grabbedImage,
 			double currentTime) {
-		this.currentTime = currentTime;
+
+		images = new LinkedList<BufferedImage>();
+
 		if (grabbedImage != null) {
+
 			try {
 
 				// copy the original frame to draw on it
@@ -149,26 +167,31 @@ public class ImageProcessor {
 				// morph. close again
 				cvDilate(foreground, foreground, null, 3);
 				cvErode(foreground, foreground, null, 3);
-				// canves.showImage(foreground);
+
+				images.add(foreground.getBufferedImage());
+
+				if (tempImg == null) {
+					tempImg = IplImage.create(grabbedImage.width(),
+							grabbedImage.height(), IPL_DEPTH_8U, 1);
+					images.add(tempImg.getBufferedImage());
+				}
 
 				// find and save blobs
 				getBlobs(foreground);
 
-				// System.out.println(cnt);
-
 				if (cnt == 1) { // if there is only one blob then collosion
-					// System.out.println("collosion");
 
 					ptCurrentPlayer1 = ptPrevPlayer1;
 					ptCurrentPlayer2 = ptPrevPlayer2;
 
 					CvRect temp = Biggestboundbox;
-					List<Point> points = divideBlob(Biggestboundbox,
-							ptCurrentPlayer1, ptCurrentPlayer2);
+
+					List<Point> points = divideBlob1(ptCurrentPlayer1,
+							ptCurrentPlayer2);
 
 					if (points.size() > 0) {
 						Point first = points.get(0);
-						Point last = points.get(points.size() - 1);
+						Point last = points.get(1);
 
 						cvLine(foreground, cvPoint(first.x, first.y),
 								cvPoint(last.x, last.y), CV_RGB(0, 0, 0), 5, 8,
@@ -178,7 +201,7 @@ public class ImageProcessor {
 								cvPoint(last.x, last.y), CV_RGB(255, 255, 255),
 								2, 8, 0);
 
-						System.out.println(getBlobs(foreground));
+						getBlobs(foreground);
 
 						cvRectangle(
 								foreground,
@@ -208,13 +231,12 @@ public class ImageProcessor {
 
 						}
 
-						// testFrame.showImage(foreground);
+						tempImg = foreground.clone();
 					}
 
 				}
-				// if more than one blob, get the position of the players by the
-				// center of the surrounding box
-				if (cnt == 1) {
+
+				if (cnt == 1) {// if blob could not be separated
 					System.err.println("unresolved blob separation");
 					dataCollector.add(new Data(currentTime,
 							"unresolved blob separation"));
@@ -227,7 +249,11 @@ public class ImageProcessor {
 											+ Biggestboundbox.height()),
 							CV_RGB(255, 0, 0), 1, 8, 0);
 
-				} else {
+				}
+
+				// if more than one blob, get the position of the players by the
+				// center of the surrounding box
+				else {
 
 					ptCurrentPlayer1 = new Point(
 							(Biggestboundbox.x() + Biggestboundbox.width() / 2),
@@ -237,17 +263,14 @@ public class ImageProcessor {
 							(Bigboundbox.x() + Bigboundbox.width() / 2),
 							(Bigboundbox.y() + Bigboundbox.height() / 2));
 
+					// check the distance between the players
+					// note: only the first player is checked to avoid overwrite
 					if (ptPrevPlayer1 != null && ptPrevPlayer2 != null) {
 
 						double distP1Prev1 = distance(ptCurrentPlayer1,
 								ptPrevPlayer1);
 						double distP1Prev2 = distance(ptCurrentPlayer1,
 								ptPrevPlayer2);
-
-						double distP2Prev2 = distance(ptCurrentPlayer2,
-								ptPrevPlayer2);
-						double distP2Prev1 = distance(ptCurrentPlayer2,
-								ptPrevPlayer1);
 
 						if (distP1Prev1 > distP1Prev2)
 
@@ -261,6 +284,7 @@ public class ImageProcessor {
 							Bigboundbox = boundbox;
 
 						}
+						// draw a line from the previous position to the current
 						cvLine(orig,
 								cvPoint(ptCurrentPlayer1.x, ptCurrentPlayer1.y),
 								cvPoint(ptPrevPlayer1.x, ptPrevPlayer1.y),
@@ -271,6 +295,7 @@ public class ImageProcessor {
 								CV_RGB(0, 255, 0), 1, 8, 0);
 					}
 
+					// draw the position of the players
 					cvCircle(orig,
 							cvPoint(ptCurrentPlayer1.x, ptCurrentPlayer1.y), 2,
 							CV_RGB(255, 0, 0), 1, 8, 0);
@@ -279,6 +304,7 @@ public class ImageProcessor {
 							cvPoint(ptCurrentPlayer2.x, ptCurrentPlayer2.y), 2,
 							CV_RGB(0, 255, 0), 1, 8, 0);
 
+					// draw a rectangle around the players
 					cvRectangle(
 							orig,
 							cvPoint(Biggestboundbox.x(), Biggestboundbox.y()),
@@ -295,6 +321,7 @@ public class ImageProcessor {
 									Bigboundbox.y() + Bigboundbox.height()),
 							CV_RGB(0, 255, 0), 1, 8, 0);
 
+					// draw the safe area
 					cvRectangle(orig, cvPoint(10, 10), cvPoint(365, 270),
 							CV_RGB(0, 0, 255), 1, 8, 0);
 
@@ -306,13 +333,16 @@ public class ImageProcessor {
 
 				System.out.println("no frame");
 				dataCollector.add(new Data(currentTime, "No Frame"));
-				return orig.getBufferedImage();
+
+				return null;
 
 			}
 			dataCollector.add(new Data(currentTime, ptCurrentPlayer1,
 					ptCurrentPlayer2));
+			images.add(tempImg.getBufferedImage());
+			images.add(orig.getBufferedImage());
 
-			return orig.getBufferedImage();
+			return images;
 
 		}
 		return null;
@@ -322,9 +352,9 @@ public class ImageProcessor {
 	 * calculate the distance between 2 Points
 	 * 
 	 * @param p1
-	 *            point 1
+	 *            position 1
 	 * @param p2
-	 *            point 2
+	 *            position 2
 	 * @return the distance
 	 */
 	private double distance(Point p1, Point p2) {
@@ -336,10 +366,18 @@ public class ImageProcessor {
 	}
 
 	/**
-	 * finds the blobs in the processed image
+	 * Finds the blobs in the processed image with the help of their contours
+	 * and sorts them according to their size. Only the two biggest blobs wil be
+	 * considered for the tracking. It is assumed that the two biggest blobs
+	 * represent the players. Not all the noise could be reduced during the
+	 * image processing, in the first line the borders are critical in this
+	 * regard, so this area will not be considered in further steps. The safe
+	 * area is marked by a blue rectangle.
+	 * 
 	 * 
 	 * @param foreground
 	 *            the processed image
+	 * @return the amount of blobs in this frame
 	 */
 	private int getBlobs(IplImage foreground) {
 
@@ -352,8 +390,6 @@ public class ImageProcessor {
 		Bigboundbox = null;
 		// count the blobs
 		cnt = 0;
-
-		// System.out.println(orig.width() + "x" + orig.height());
 
 		// iterate over the contours (countour = blob)
 		// get the two biggest blobs (=players)
@@ -389,13 +425,19 @@ public class ImageProcessor {
 	}
 
 	/**
-	 * divide the blob if collosion occures, use the previous positions of the
-	 * players
+	 * Divide the blob if collosion occures, use the previous positions of the
+	 * players. Elliminate the pixels, which have the same distance to both
+	 * players. Problem: the points do not form a line, so that they do not
+	 * separate the blob. As an approach the first and the last points were
+	 * connected for this purpose.
 	 * 
-	 * @param width
-	 * @param height
+	 * @param boundbox
+	 *            the bounding box of the blob
 	 * @param p1
+	 *            position of player 1
 	 * @param p2
+	 *            position of player 2
+	 * @return the list of points, which have the same distance to both players
 	 */
 	private List<Point> divideBlob(CvRect boundbox, Point p1, Point p2) {
 
@@ -425,6 +467,51 @@ public class ImageProcessor {
 		} catch (Exception e) {
 			System.out.println("Divide failure");
 		}
+		return points;
+
+	}
+
+	/**
+	 * Another approach for blob separation: draw a normal to the line which
+	 * connects the two positions of the players and intersects the middle of
+	 * this line. The two end points will be calculated. Problem: the lenght of
+	 * the normal is dependent from the lenght of the line between the two
+	 * players. If the players are too near to each other, the normal will be
+	 * short as well and wont be able to cut the blob into two pieces.
+	 * 
+	 * 
+	 * @param p1
+	 *            position of player 1
+	 * @param p2
+	 *            position of player 2
+	 * @return two Points, the two endpoints of the normal
+	 */
+	private List<Point> divideBlob1(Point p1, Point p2) {
+
+		List<Point> points = new LinkedList<Point>();
+
+		int x1 = p1.x;
+		int x2 = p2.x;
+
+		int y1 = p1.y;
+		int y2 = p2.y;
+
+		int dx = x2 - x1;
+		int dy = y2 - y1;
+
+		int centerx = (x1 + x2) / 2;
+		int centery = (y1 + y2) / 2;
+
+		Point point1 = new Point(-dy + centerx, dx + centery);
+		Point point2 = new Point(dy + centerx, -dx + centery);
+
+		// System.out.println("pos: (" + x1 + "/" + y1 + ") (" + x2 + "/" + y2
+		// + ") normal: (" + point1.x + "/" + point1.y + ") (" + point2.x
+		// + "/" + point2.y + ")");
+
+		points.add(point1);
+		points.add(point2);
+
 		return points;
 
 	}
