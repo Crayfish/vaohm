@@ -1,6 +1,5 @@
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Graphics;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -32,21 +31,22 @@ public class GUI1 extends JFrame implements ActionListener {
 	private JMenuItem mntmSquash1 = new JMenuItem("Squash1.avi");
 	private JMenuItem mnSave = new JMenuItem("Show data");
 	private JPanel vpanel = new JPanel();
-	private ImgPanel imagePanel = new ImgPanel();
-	private JPanel settingsPanel = new JPanel();
+	private ImgPanel imagePanel = new ImgPanel("output");
+	private ImgPanel ipBlobs = new ImgPanel("blob view");
+	private ImgPanel ipCollide = new ImgPanel("collosion view");
 
 	private Videoplayer vplayer;
 	private ImageProcessor processor;
 	private boolean playing = false;
-	List<Data> dataCollector = new LinkedList<Data>();
+	private List<Data> dataCollector = new LinkedList<Data>();
 
 	public GUI1() {
-		super("Motion Tracking");
+		super("Motion Tracking - Squash");
 
-		this.setPreferredSize(new Dimension(800, 400));
+		this.setPreferredSize(new Dimension(810, 650));
 		this.setLocation(
 				(Toolkit.getDefaultToolkit().getScreenSize().width - 800) / 2,
-				(Toolkit.getDefaultToolkit().getScreenSize().height - 400) / 2);
+				(Toolkit.getDefaultToolkit().getScreenSize().height - 650) / 2);
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -79,17 +79,21 @@ public class GUI1 extends JFrame implements ActionListener {
 		mnSave.setActionCommand("save");
 
 		/* Layout issues */
-		vplayer = new Videoplayer(imagePanel, processor = new ImageProcessor(
-				dataCollector));
+		vplayer = new Videoplayer(imagePanel, ipBlobs, ipCollide,
+				processor = new ImageProcessor(dataCollector));
 		getContentPane().setLayout(new FlowLayout());
-		vpanel.setPreferredSize(new Dimension(384, 315));
+		vpanel.setPreferredSize(new Dimension(388, 288));
 		getContentPane().add("North", vpanel);
 		vpanel.add(vplayer);
 
-		imagePanel.setPreferredSize(new Dimension(384, 288));
+		imagePanel.setPreferredSize(new Dimension(388, 288));
 		getContentPane().add("North", imagePanel);
 
-		getContentPane().add("North", settingsPanel);
+		ipBlobs.setPreferredSize(new Dimension(388, 288));
+		getContentPane().add("North", ipBlobs);
+
+		ipCollide.setPreferredSize(new Dimension(388, 288));
+		getContentPane().add("North", ipCollide);
 
 	}
 
@@ -149,10 +153,4 @@ public class GUI1 extends JFrame implements ActionListener {
 
 	}
 
-	public void paint(Graphics g) {
-		super.paint(g);
-		if (playing)
-
-			repaint();
-	}
 }

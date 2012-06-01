@@ -1,3 +1,4 @@
+import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
@@ -13,9 +14,11 @@ import javax.swing.JPanel;
 public class ImgPanel extends JPanel {
 
 	private BufferedImage buffImg = null;
+	private String title;
 
-	public ImgPanel() {
+	public ImgPanel(String title) {
 		super();
+		this.title = title;
 	}
 
 	/**
@@ -32,9 +35,14 @@ public class ImgPanel extends JPanel {
 		paint(g);
 	}
 
+	/***
+	 * Draw the image and write the title on it
+	 */
 	public void paint(Graphics g) {
 		if (buffImg != null) {
 			g.drawImage(buffImg, 0, 0, this);
+			g.setColor(Color.white);
+			g.drawString(title, 10, 15);
 		}
 	}
 
