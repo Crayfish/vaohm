@@ -13,11 +13,8 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JSlider;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
-public class GUI1 extends JFrame implements ActionListener, ChangeListener {
+public class GUI1 extends JFrame implements ActionListener {
 	/* GUI Components */
 	private JMenuBar menuBar = new JMenuBar();
 	private JMenu mnFile = new JMenu("File");
@@ -26,9 +23,6 @@ public class GUI1 extends JFrame implements ActionListener, ChangeListener {
 	private JPanel vpanel = new JPanel();
 	private ImgPanel imagePanel = new ImgPanel();
 	private JPanel settingsPanel = new JPanel();
-	private JSlider thresholdSldr = new JSlider(JSlider.HORIZONTAL, 0, 255, 120);
-	private JLabel thresholdValue = new JLabel();
-	private JLabel threshold = new JLabel("Threshold: ");
 	private JLabel blobs = new JLabel("Blobs: ");
 	private JLabel time = new JLabel(": ");
 
@@ -70,8 +64,6 @@ public class GUI1 extends JFrame implements ActionListener, ChangeListener {
 		mntmSquash1.addActionListener(this);
 		mntmSquash1.setActionCommand("squash1");
 
-		thresholdSldr.addChangeListener(this);
-
 		/* Layout issues */
 		vplayer = new Videoplayer(imagePanel, processor = new ImageProcessor());
 		getContentPane().setLayout(new FlowLayout());
@@ -86,8 +78,6 @@ public class GUI1 extends JFrame implements ActionListener, ChangeListener {
 		// settingsPanel.add(threshold);
 		// settingsPanel.add(thresholdSldr);
 		// settingsPanel.add(thresholdValue);
-		thresholdValue
-				.setText(new Integer(thresholdSldr.getValue()).toString());
 		// settingsPanel.add(blobs);
 		settingsPanel.add(time);
 
@@ -127,17 +117,6 @@ public class GUI1 extends JFrame implements ActionListener, ChangeListener {
 			}
 
 		}
-
-	}
-
-	/**
-	 * 
-	 */
-	public void stateChanged(ChangeEvent arg0) {
-		int value = thresholdSldr.getValue();
-		thresholdValue
-				.setText(new Integer(thresholdSldr.getValue()).toString());
-		vplayer.setThreshold(value);
 
 	}
 

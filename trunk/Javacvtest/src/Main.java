@@ -16,6 +16,8 @@ import javax.swing.UnsupportedLookAndFeelException;
 public class Main {
 
 	/**
+	 * Start the GUI, set the look if windows
+	 * 
 	 * @param args
 	 *            are ignored
 	 */
