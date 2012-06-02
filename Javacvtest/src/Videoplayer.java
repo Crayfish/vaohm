@@ -93,6 +93,13 @@ public class Videoplayer extends JPanel implements ActionListener {
 	 */
 	public boolean open(MediaLocator ml) throws Exception {
 
+		if (p != null) {
+			p.stop();
+			p.close();
+			p = null;
+
+		}
+
 		ds = Manager.createDataSource(ml);
 		p = Manager.createRealizedPlayer(ds);
 
