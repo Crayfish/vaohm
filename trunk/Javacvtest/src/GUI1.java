@@ -1,13 +1,21 @@
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JList;
 import javax.swing.JMenu;
@@ -16,6 +24,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 /**
  * Graphical user Interface
@@ -37,7 +46,6 @@ public class GUI1 extends JFrame implements ActionListener {
 
 	private Videoplayer vplayer;
 	private ImageProcessor processor;
-	private boolean playing = false;
 	private List<Data> dataCollector = new LinkedList<Data>();
 
 	public GUI1() {
@@ -54,6 +62,7 @@ public class GUI1 extends JFrame implements ActionListener {
 
 		setVisible(true);
 		pack();
+		start();
 
 	}
 
@@ -70,7 +79,7 @@ public class GUI1 extends JFrame implements ActionListener {
 		mntmOpenFromFile.addActionListener(this);
 		mntmOpenFromFile.setActionCommand("open");
 
-		mnFile.add(mntmSquash1);
+		// mnFile.add(mntmSquash1);
 		mntmSquash1.addActionListener(this);
 		mntmSquash1.setActionCommand("squash1");
 
@@ -97,6 +106,17 @@ public class GUI1 extends JFrame implements ActionListener {
 
 	}
 
+	private void start() {
+		try {
+			if (vplayer.openURL(null)) {
+				pack();
+			}
+		} catch (Exception e2) {
+			JOptionPane.showMessageDialog(this, "Cannot open the video file.");
+			// e1.printStackTrace();
+		}
+	}
+
 	/**
 	 * 
 	 */
@@ -106,7 +126,6 @@ public class GUI1 extends JFrame implements ActionListener {
 			try {
 				if (vplayer.openURL(null)) {
 					pack();
-					playing = true;
 				}
 			} catch (Exception e1) {
 				JOptionPane.showMessageDialog(this,
@@ -118,11 +137,10 @@ public class GUI1 extends JFrame implements ActionListener {
 		if (e.getActionCommand().equals("squash1")) {
 
 			try {
-				if (vplayer
-						.openURL(new URL(
-								"file:/C:/Users/Márk/Documents/UNI/Visual Analisis of Human Motion/squash1.avi"))) {
+				if (vplayer.openURL(new URL(new URL("file:"), "./Squash1.avi")))
+					;
+				{
 					pack();
-					playing = true;
 				}
 			} catch (Exception e1) {
 				// e1.printStackTrace();
@@ -144,13 +162,81 @@ public class GUI1 extends JFrame implements ActionListener {
 
 			JList<String> list = new JList<String>(data);
 			JScrollPane listScroller = new JScrollPane(list);
-			dataFrame.getContentPane().add(listScroller);
+			dataFrame.getContentPane().setLayout(new GridBagLayout());
+			GridBagConstraints gbc = new GridBagConstraints();
+
+			gbc.gridx = 1;
+			gbc.gridy = 1;
+
+			gbc.weightx = 1;
+			gbc.weighty = 1;
+			gbc.fill = GridBagConstraints.BOTH;
+			dataFrame.getContentPane().add(listScroller, gbc);
+
+			JButton save = new JButton("save to file");
+			gbc.gridy = 2;
+			gbc.weightx = 0;
+			gbc.weighty = 0;
+			dataFrame.getContentPane().add(save, gbc);
+
+			save.addActionListener(this);
+			save.setActionCommand("save data");
 
 			dataFrame.setSize(new Dimension(400, 600));
 			dataFrame.setVisible(true);
 			pack();
 		}
+		if (e.getActionCommand().equals("save data")) {
+			System.out.println("saving data to file...");
+			JFileChooser fc = new JFileChooser();
+			FileNameExtensionFilter filter = new FileNameExtensionFilter(
+					".txt", "txt");
+			fc.addChoosableFileFilter(filter);
 
+			int ret = fc.showSaveDialog(this);
+
+			if (ret == JFileChooser.APPROVE_OPTION) {
+				saveData(fc.getSelectedFile());
+
+			}
+		}
+
+	}
+
+	private void saveData(File file) {
+		String filename = file.getPath();
+		if (!filename.endsWith(".txt"))
+			filename = filename + ".txt";
+		if (new File(filename).exists()) {
+			Object[] options = { "Replace", "Cancel" };
+			int n = JOptionPane.showOptionDialog(this,
+					"File already exists! Would you like to replace it?",
+					"Replacement", JOptionPane.YES_NO_OPTION,
+					JOptionPane.QUESTION_MESSAGE, null, options, options[1]);
+			if (n == 0) {
+				new File(filename).delete();
+
+			} else
+				return;
+
+		}
+		String Content = "";
+		String[] data = new String[dataCollector.size() + 1];
+		Iterator<Data> it = dataCollector.iterator();
+		data[0] = "Time   Player1   Player2";
+
+		try {
+			BufferedWriter out = new BufferedWriter(new FileWriter(filename));
+			while (it.hasNext()) {
+				out.write(it.next().print());
+			}
+			// out.write(Content);
+			out.close();
+
+			JOptionPane.showMessageDialog(this, "File was saved!");
+		} catch (IOException ex1) {
+
+		}
 	}
 
 }
